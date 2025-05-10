@@ -21,6 +21,19 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
     show-sql: true
 
+  # Mail Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:dentistdss@gmail.com}
+    password: ${MAIL_PASSWORD:u@(4ZucXXt#@85M}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   security:
     # OAuth2 Configuration
     oauth2:
@@ -38,6 +51,9 @@ app:
   # Frontend URLs for CORS and redirects
   oauth2:
     authorized-redirect-uri: http://localhost:3000/oauth2/redirect
+  email-verification:
+    token-expiry-minutes: 43200 # 30 days in minutes
+    base-url: https://dentist.mizhifei.press
 eureka:
   client:
     serviceUrl:

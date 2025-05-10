@@ -50,8 +50,13 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<ApiResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         return ResponseEntity.ok(authService.registerUser(signUpRequest));
+    }
+
+    @GetMapping("/signup/verify")
+    public ResponseEntity<AuthResponse> verifyEmail(@RequestParam("vtoken") String token) {
+        return ResponseEntity.ok(authService.verifyEmailAndLogin(token));
     }
 
     @PostMapping("/logout")

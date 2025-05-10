@@ -7,19 +7,6 @@ management:
   endpoint:
     health:
       show-details: always
-spring:
-  # Mail Configuration
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:dentistdss@gmail.com}
-    password: ${MAIL_PASSWORD:u@(4ZucXXt#@85M}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
 
 

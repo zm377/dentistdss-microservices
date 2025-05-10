@@ -1,0 +1,17 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: discovery-server
+  config:
+    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+
+eureka:
+  instance:
+    hostname: discovery-server
+  client:
+    registerWithEureka: false
+    fetchRegistry: false
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/

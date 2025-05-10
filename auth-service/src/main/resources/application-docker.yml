@@ -1,0 +1,29 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  config:
+    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+
+  # Database Configuration (MySQL)
+  datasource:
+    url: jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: dentistdss
+    password: dentistdss
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    preferIpAddress: true

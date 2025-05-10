@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -8,11 +9,11 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>auth-service</artifactId>
+    <artifactId>oauth-service</artifactId>
     <packaging>jar</packaging>
 
-    <name>auth-service</name>
-    <description>Authentication Service for DentistDSS</description>
+    <name>oauth-service</name>
+    <description>OAuth Service for DentistDSS</description>
 
     <dependencies>
         <dependency>
@@ -57,11 +58,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
             <version>${jjwt.version}</version>
@@ -103,10 +99,10 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
+<!--            <plugin>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.18.20.0</version> <!-- Use a specific version or a property -->
+                <version>1.18.20.0</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
@@ -115,7 +111,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
-</project>
+</project> 
