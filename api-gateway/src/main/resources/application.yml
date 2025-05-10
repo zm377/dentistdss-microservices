@@ -1,0 +1,56 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@localhost:8888
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "https://dentist.mizhifei.press"
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+# Configure reactor netty server to use virtual threads if running on Java 21+
+reactor:
+  netty:
+    http:
+      server:
+        accessLogEnabled: true
+
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework: TRACE
+
+
+
+

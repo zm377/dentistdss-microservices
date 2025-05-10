@@ -1,13 +1,23 @@
-package press.mizhifei.dentist.auth.controller.service;
+package press.mizhifei.dentist.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import press.mizhifei.dentist.auth.dto.AuthResponse;
+import press.mizhifei.dentist.auth.dto.LoginRequest;
+import press.mizhifei.dentist.auth.dto.SignUpRequest;
+import press.mizhifei.dentist.auth.model.AuthProvider;
+import press.mizhifei.dentist.auth.model.Role;
+import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.repository.UserRepository;
 import press.mizhifei.dentist.auth.security.JwtTokenProvider;
+import press.mizhifei.dentist.auth.security.UserPrincipal;
+
+import java.util.Collections;
 
 /**
  * @author zhifeimi
@@ -55,7 +65,7 @@ public class AuthService {
                 .email(signUpRequest.getEmail())
                 .password(passwordEncoder.encode(signUpRequest.getPassword()))
                 .provider(AuthProvider.LOCAL)
-                .roles(Collections.singleton(Role.ROLE_USER))
+                .roles(Collections.singleton(Role.PATIENT))
                 .enabled(true)
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)

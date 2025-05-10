@@ -1,0 +1,47 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        bootstrap: true
+        # Keep the native configuration for backward compatibility
+        native:
+          search-locations: classpath:/config
+
+  security:
+    user:
+      name: zhifeimi
+      password: CSIT998CAPSTONE2025dentistdss
+
+
+# Common Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+
+# Logging Configuration
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework.cloud: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
+
+
+
+
+
+

@@ -1,0 +1,32 @@
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info # Expose all actuator endpoints (useful for debugging)
+  endpoint:
+    health:
+      show-details: always
+spring:
+  # Mail Configuration
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:dentistdss@gmail.com}
+    password: ${MAIL_PASSWORD:u@(4ZucXXt#@85M}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+
+
+
+# Email verification and notification settings
+notification:
+  email:
+    verification-base-url: http://localhost:3000/verify-email
+    from-email: admin@mizhifei.press
+    from-name: DentistDSS
