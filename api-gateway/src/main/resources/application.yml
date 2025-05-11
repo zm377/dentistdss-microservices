@@ -46,6 +46,17 @@ reactor:
         accessLogEnabled: true
 
 
+springdoc:
+  swagger-ui:
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth-service
+      - name: oauth-service
+        url: /v3/api-docs/oauth-service
+  api-docs:
+    groups:
+      enabled: true
+
 logging:
   level:
     press.mizhifei.dentist: DEBUG
