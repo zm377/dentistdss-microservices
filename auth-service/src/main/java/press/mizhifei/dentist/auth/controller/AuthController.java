@@ -3,14 +3,15 @@ package press.mizhifei.dentist.auth.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.view.RedirectView;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.AuthResponse;
 import press.mizhifei.dentist.auth.dto.LoginRequest;
 import press.mizhifei.dentist.auth.dto.SignUpRequest;
+import press.mizhifei.dentist.auth.dto.SignUpStaffRequest;
+import press.mizhifei.dentist.auth.dto.UserResponse;
+import press.mizhifei.dentist.auth.dto.VerifyCodeRequest;
 import press.mizhifei.dentist.auth.service.AuthService;
 
 /**
@@ -23,53 +24,46 @@ import press.mizhifei.dentist.auth.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
-    private final Environment environment;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<AuthResponse>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.authenticateUser(loginRequest));
     }
 
-    @GetMapping("/oauth2/google")
-    public RedirectView redirectToGoogleOAuth() {
-        // This endpoint will redirect to Google's OAuth2 authorization URL
-        String clientId = environment.getProperty("spring.security.oauth2.client.registration.google.client-id");
-        String redirectUri = environment.getProperty("app.oauth2.authorized-redirect-uri");
-        
-        // Construct the Google OAuth2 URL
-        String googleOAuthUrl = "https://accounts.google.com/o/oauth2/auth" +
-                "?client_id=" + clientId +
-                "&redirect_uri=" + redirectUri +
-                "&response_type=code" +
-                "&scope=email%20profile" +
-                "&access_type=offline";
-        
-        RedirectView redirectView = new RedirectView();
-        redirectView.setUrl(googleOAuthUrl);
-        return redirectView;
-    }
-
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<ApiResponse<String>> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         return ResponseEntity.ok(authService.registerUser(signUpRequest));
     }
 
-    @GetMapping("/signup/verify")
-    public ResponseEntity<AuthResponse> verifyEmail(@RequestParam("vtoken") String token) {
+    @PostMapping("/signup/staff")
+    public ResponseEntity<ApiResponse<String>> registerStaff(@Valid @RequestBody SignUpStaffRequest signUpStaffRequest) {
+        return ResponseEntity.ok(authService.registerStaff(signUpStaffRequest));
+    }
+
+    @PostMapping("/signup/verify/code/resend")
+    public ResponseEntity<ApiResponse<String>> resendVerificationCode(@RequestParam("email") String email) {
+        return ResponseEntity.ok(authService.resendVerificationCode(email));
+    }
+
+    @GetMapping("/signup/verify/token")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyEmail(@RequestParam("vtoken") String token) {
         return ResponseEntity.ok(authService.verifyEmailAndLogin(token));
     }
 
+    @PostMapping("/signup/verify/code")
+    public ResponseEntity<ApiResponse<String>> verifyEmailWithCode(@Valid @RequestBody VerifyCodeRequest verifyRequest) {
+        return ResponseEntity.ok(authService.verifyEmailByCode(verifyRequest.getEmail(), verifyRequest.getCode()));
+    }
+
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logoutUser() {
+    public ResponseEntity<ApiResponse<String>> logoutUser() {
         // JWT is stateless, so we don't need to do anything on the server side
         // The client should remove the token from local storage
-        return ResponseEntity.ok(new ApiResponse(true, "User logged out successfully"));
+        return ResponseEntity.ok(new ApiResponse<String>(true, "User logged out successfully"));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse> getCurrentUser() {
-        return ResponseEntity.ok(new ApiResponse(true, "User is authenticated"));
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
+        return ResponseEntity.ok(authService.getCurrentUser());
     }
-
-
 }

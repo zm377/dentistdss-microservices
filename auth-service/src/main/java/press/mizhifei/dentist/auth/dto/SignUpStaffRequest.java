@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import press.mizhifei.dentist.auth.model.Role;
 
 /**
  * @author zhifeimi
@@ -14,7 +13,13 @@ import press.mizhifei.dentist.auth.model.Role;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SignUpRequest {
+public class SignUpStaffRequest {
+
+    @NotBlank(message = "Clinic id is required")
+    private Long clinicId;
+
+    @NotBlank(message = "Clinic name is required")
+    private String clinicName;
 
     @NotBlank(message = "First name is required")
     private String firstName;
@@ -30,6 +35,8 @@ public class SignUpRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotBlank(message = "Password is required")
-    private Role role;
+    @NotBlank(message = "Role is required")
+    private String role;
+    
+
 }

@@ -2,24 +2,45 @@ version: '3.8'
 
 services:
   # MySQL Database
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: mysql
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpassword
+  #     MYSQL_DATABASE: dentistdss
+  #     MYSQL_USER: dentistdss
+  #     MYSQL_PASSWORD: dentistdss
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #     - ./databases/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #   networks:
+  #     - dentistdss-network
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "dentistdss", "-pdentistdss"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17
+    container_name: postgres
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: dentistdss
-      MYSQL_USER: dentistdss
-      MYSQL_PASSWORD: dentistdss
+      POSTGRES_DB: dentistdss
+      POSTGRES_USER: dentistdss
+      POSTGRES_PASSWORD: dentistdss
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./databases/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - dentistdss-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "dentistdss", "-pdentistdss"]
+      test: ["CMD-SHELL", "pg_isready -U dentistdss"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +58,7 @@ services:
     networks:
       - dentistdss-network
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -92,7 +113,8 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
 
   # OAuth Service
   oauth-service:
@@ -110,11 +132,14 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
 
 # Volumes
 volumes:
-  mysql_data:
+  # mysql_data:
+  #   driver: local
+  postgres_data:
     driver: local
 
 # Networks

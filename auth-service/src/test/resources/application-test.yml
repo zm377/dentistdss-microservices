@@ -1,0 +1,26 @@
+spring:
+  # Mail Configuration - using the same SMTP settings as in main application.yml
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:dentistdss@gmail.com}
+    password: ${MAIL_PASSWORD:bxqwhmquxcjtarwx} # Use the actual password from environment variable
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        # Enable debug mode to see detailed logs
+        debug: true
+        transport:
+          protocol: smtp
+
+# App Configuration
+app:
+  email-verification:
+    base-url: https://dentist.mizhifei.press
+  
+  # Sender email configuration - ensure this matches what's expected in EmailService
+  email:
+    from-email: dentistdss@gmail.com

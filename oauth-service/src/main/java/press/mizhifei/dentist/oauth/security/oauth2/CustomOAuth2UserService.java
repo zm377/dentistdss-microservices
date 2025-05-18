@@ -1,7 +1,6 @@
 package press.mizhifei.dentist.oauth.security.oauth2;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -16,6 +15,7 @@ import press.mizhifei.dentist.oauth.repository.UserRepository;
 import press.mizhifei.dentist.oauth.security.UserPrincipal;
 import press.mizhifei.dentist.oauth.security.oauth2.user.OAuth2UserInfo;
 import press.mizhifei.dentist.oauth.security.oauth2.user.OAuth2UserInfoFactory;
+import press.mizhifei.dentist.oauth.exception.OAuth2AuthenticationProcessingException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -39,30 +39,41 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         } catch (AuthenticationException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
+            throw new OAuth2AuthenticationProcessingException(ex.getMessage(), ex.getCause());
         }
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User) {
-        String registrationId = oAuth2UserRequest.getClientRegistration().getRegistrationId();
-        OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationId, oAuth2User.getAttributes());
+        String registrationIdString = oAuth2UserRequest.getClientRegistration().getRegistrationId();
+        OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationIdString, oAuth2User.getAttributes());
 
         if (!StringUtils.hasText(oAuth2UserInfo.getEmail())) {
-            throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
+            throw new OAuth2AuthenticationProcessingException("Email not found from OAuth2 provider: " + registrationIdString);
         }
 
         Optional<User> userOptional = userRepository.findByEmail(oAuth2UserInfo.getEmail());
         User user;
+        AuthProvider oauthProvider = AuthProvider.valueOf(registrationIdString.toUpperCase());
 
         if (userOptional.isPresent()) {
             user = userOptional.get();
+            AuthProvider existingProvider = user.getProvider();
 
-            if (!user.getProvider().equals(AuthProvider.valueOf(registrationId.toUpperCase()))) {
-                throw new OAuth2AuthenticationException("You're signed up with " + user.getProvider() +
-                        ". Please use your " + user.getProvider() + " account to login.");
+            if (existingProvider == AuthProvider.LOCAL) {
+                user.setProvider(oauthProvider);
+                user.setProviderId(oAuth2UserInfo.getId());
+                user.setEnabled(true);
+                user.setAccountNonExpired(true);
+                user.setCredentialsNonExpired(true);
+                user.setAccountNonLocked(true);
+                user = updateExistingUser(user, oAuth2UserInfo);
+            } else if (existingProvider != oauthProvider) {
+                throw new OAuth2AuthenticationProcessingException("Looks like you\'re signed up with " +
+                        existingProvider + " account. Please use your " + existingProvider +
+                        " account to login.");
+            } else {
+                user = updateExistingUser(user, oAuth2UserInfo);
             }
-
-            user = updateExistingUser(user, oAuth2UserInfo);
         } else {
             user = registerNewUser(oAuth2UserRequest, oAuth2UserInfo);
         }

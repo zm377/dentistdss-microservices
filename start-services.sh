@@ -15,21 +15,21 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Check if MySQL container is running
-MYSQL_RUNNING=$(docker ps -q -f name=mysql)
-if [ -n "$MYSQL_RUNNING" ]; then
-    echo -e "${GREEN}MySQL container is already running. Preserving it to maintain data.${NC}"
+# Check if PostgreSQL container is running
+POSTGRES_RUNNING=$(docker ps -q -f name=postgres)
+if [ -n "$POSTGRES_RUNNING" ]; then
+    echo -e "${GREEN}PostgreSQL container is already running. Preserving it to maintain data.${NC}"
     
-    # Stop only non-MySQL containers
-    echo -e "${YELLOW}Stopping existing non-MySQL containers...${NC}"
+    # Stop only non-PostgreSQL containers
+    echo -e "${YELLOW}Stopping existing non-PostgreSQL containers...${NC}"
     docker-compose stop config-server discovery-server api-gateway auth-service oauth-service
     docker-compose rm -f config-server discovery-server api-gateway auth-service oauth-service
     
-    # Start non-MySQL services
-    echo -e "${GREEN}Starting all non-MySQL services...${NC}"
+    # Start non-PostgreSQL services
+    echo -e "${GREEN}Starting all non-PostgreSQL services...${NC}"
     docker-compose up --build --force-recreate -d config-server discovery-server api-gateway auth-service oauth-service
 else
-    echo -e "${YELLOW}MySQL container is not running. Starting all services...${NC}"
+    echo -e "${YELLOW}PostgreSQL container is not running. Starting all services...${NC}"
     
     # Stop all containers if any are running
     echo -e "${YELLOW}Stopping existing containers (if any)...${NC}"
@@ -43,7 +43,7 @@ else
 fi
 
 echo -e "${YELLOW}Services are starting in the following order:${NC}"
-echo -e "1. MySQL Database (preserved if already running)"
+echo -e "1. PostgreSQL Database (preserved if already running)"
 echo -e "2. Config Server"
 echo -e "3. Discovery Server (Eureka)"
 echo -e "4. API Gateway"

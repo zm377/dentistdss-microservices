@@ -6,11 +6,9 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import press.mizhifei.dentist.auth.model.User;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -19,14 +17,13 @@ import java.util.stream.Collectors;
 @Data
 @AllArgsConstructor
 @Builder
-public class UserPrincipal implements OAuth2User, UserDetails {
+public class UserPrincipal implements UserDetails {
     private Long id;
     private String email;
     private String password;
     private String firstName;
     private String lastName;
     private Collection<? extends GrantedAuthority> authorities;
-    private Map<String, Object> attributes;
     private boolean enabled;
     private boolean accountNonExpired;
     private boolean credentialsNonExpired;
@@ -51,19 +48,8 @@ public class UserPrincipal implements OAuth2User, UserDetails {
                 .build();
     }
 
-    public static UserPrincipal create(User user, Map<String, Object> attributes) {
-        UserPrincipal userPrincipal = UserPrincipal.create(user);
-        userPrincipal.setAttributes(attributes);
-        return userPrincipal;
-    }
-
     @Override
     public String getUsername() {
         return email;
-    }
-
-    @Override
-    public String getName() {
-        return id.toString();
     }
 }

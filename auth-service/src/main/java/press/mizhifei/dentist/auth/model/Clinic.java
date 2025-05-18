@@ -26,6 +26,15 @@ public class Clinic {
     @Column(unique = true)
     private String name;
 
+    // The admin of the clinic, each clinic has only one admin, stored in the relation table clinic_admin
+    @OneToOne
+    @JoinTable(
+        name = "clinic_admin",
+        joinColumns = @JoinColumn(name = "clinic_id"),
+        inverseJoinColumns = @JoinColumn(name = "admin_id")
+    )
+    private User admin;
+
     private String address;
     private String city;
     private String state;

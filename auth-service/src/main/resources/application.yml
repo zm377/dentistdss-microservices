@@ -7,18 +7,18 @@ spring:
   config:
     import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@localhost:8888
 
-  # Database Configuration (MySQL)
+  # Database Configuration (PostgreSQL)
   datasource:
-    url: jdbc:mysql://localhost:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:postgresql://localhost:5432/dentistdss
     username: dentistdss
     password: dentistdss
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
   # Mail Configuration
@@ -26,7 +26,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: ${MAIL_USERNAME:dentistdss@gmail.com}
-    password: ${MAIL_PASSWORD:u@(4ZucXXt#@85M}
+    password: ${MAIL_PASSWORD:bxqwhmquxcjtarwx}
     properties:
       mail:
         smtp:
@@ -34,26 +34,6 @@ spring:
           starttls:
             enable: true
 
-  security:
-    # OAuth2 Configuration
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID:403805131990-v1ff8lgium6njmvdhj5bliogpjvmpsrv.apps.googleusercontent.com}
-            client-secret: ${GOOGLE_CLIENT_SECRET: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}
-            scope:
-              - email
-              - profile
-
-# App Configuration
-app:
-  # Frontend URLs for CORS and redirects
-  oauth2:
-    authorized-redirect-uri: http://localhost:3000/oauth2/redirect
-  email-verification:
-    token-expiry-minutes: 43200 # 30 days in minutes
-    base-url: https://dentist.mizhifei.press
 eureka:
   client:
     serviceUrl:
@@ -70,3 +50,10 @@ logging:
   level:
     press.mizhifei.dentist: DEBUG
     org.springframework: TRACE
+
+# App Configuration
+app:
+  email-verification:
+    token-expiry-minutes: 43200 # 30 days in minutes
+    code-expiry-minutes: 10 # 10 minutes in minutes
+    base-url: https://dentist.mizhifei.press

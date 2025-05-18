@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (data persists across deployments)
+  postgres:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: dentistdss
+      POSTGRES_USER: dentistdss
+      POSTGRES_PASSWORD: dentistdss
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dentistdss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Micro-services pulled from Docker Hub (retagged by deploy.sh) ---
+  config-server:
+    image: dentistdss_config-server:latest  # produced by deploy.sh retagging
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ROOT=INFO
+    ports:
+      - "8888:8888"
+
+  discovery-server:
+    image: dentistdss_discovery-server:latest
+    restart: always
+    depends_on:
+      - config-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+    ports:
+      - "8761:8761"
+
+  api-gateway:
+    image: dentistdss_api-gateway:latest
+    restart: always
+    depends_on:
+      - discovery-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+    ports:
+      - "443:443"
+
+  auth-service:
+    image: dentistdss_auth-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+    ports:
+      - "8081:8081"
+
+  oauth-service:
+    image: dentistdss_oauth-service:latest
+    restart: always
+    depends_on:
+      - auth-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+    ports:
+      - "8082:8082"
+
+  # Optional MongoDB (exposes 27017) – placeholder for future use
+  mongo:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  postgres_data:
+  mongo_data: 

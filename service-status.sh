@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 echo -e "${YELLOW}Checking status of all microservices...${NC}"
 echo ""
 
-services=("mysql" "config-server" "discovery-server" "api-gateway" "auth-service" "oauth-service")
+services=("postgres" "config-server" "discovery-server" "api-gateway" "auth-service" "oauth-service")
 
 for service in "${services[@]}"; do
     status=$(docker-compose ps $service | grep -q "Up" && echo "Running" || echo "Stopped")
@@ -23,7 +23,7 @@ done
 
 echo ""
 echo -e "${YELLOW}Service ports:${NC}"
-echo -e "MySQL: 3306"
+echo -e "PostgreSQL: 5432"
 echo -e "Config Server: 8888"
 echo -e "Discovery Server: 8761"
 echo -e "API Gateway: 443 (HTTPS)"

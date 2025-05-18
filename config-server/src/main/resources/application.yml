@@ -34,10 +34,8 @@ management:
 # Logging Configuration
 logging:
   level:
-    press.mizhifei.dentist: INFO
-    org.springframework.cloud: INFO
-    org.springframework.web: INFO
-    org.springframework.security: INFO
+    press.mizhifei.dentist: DEBUG
+    org.springframework: DEBUG
 
 
 

@@ -7,18 +7,18 @@ spring:
   config:
     import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
 
-  # Database Configuration (MySQL)
+  # Database Configuration (PostgreSQL)
   datasource:
-    url: jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:postgresql://postgres:5432/dentistdss
     username: dentistdss
     password: dentistdss
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
 eureka:
@@ -27,3 +27,14 @@ eureka:
       defaultZone: http://discovery-server:8761/eureka
   instance:
     preferIpAddress: true
+
+# App Configuration
+app:
+  oauth2:
+    authorized-redirect-uris:
+      - https://dentist.mizhifei.press/oauth2/redirect
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:f2b1cabdf1d349ac6cc1822fa7b06e7771be1be6fb862bbafb32703bdaeb147efdfb0de92e1a586375580f0667b7982066f6749a7310b96f0da9b856211f6e3df3bca371612c6a8ee50ee568064e34a7755030d883b1b6edf9cd860bd7881a275ee29cbcc2af4b5cf451f247be5f55316c148b0755e9e9321bdf789d15bca3c40b1e1d69bdebd67c90d64bcb1e04609fa5a6fbfb177f610aa5ff2b693d5e9b16e4aeedebe9a6bd13c4411259c5d5bae24523c47038a945dab33a4e0d7b18e82513d48cc8e60737447bfebfc8896a4993d67644bbb2aac24ba54e50a930980b298181a487e054a21a4d9ec4355781ba050d265536b519db77de505ad6580b771ed936e488c0cfb5573ab348d975da6918bcf1dddf422f6b6a36feaa3e752f864041400408c5472c820624e6f42be219358c0cd0e65ae6ff81c4f38f3f05e1d0698053ce20a7faaac4951f28eb83c26b274277e4e584893e9a16a7bd27b4ae190d28058c7f096c40fd1a8d635cd6a0ac8579825c226c50f02469973f96dac706afd5b70106c9a4c8643f88a9d91204da02af6ccd9c8c9201e8c23d23297bbba2734471aa4efb8e580c2200b3794df880c99419c368df34d43359f1ec670ecded71965c890a54361fc5dd5138941bc11f9941b3c4dedc2cfd65384993135dac9912a039d3da6ed7ed98f221bfbaf953635179e5a4ec76e35bb29ad2f8b2d5ce27ab}
+  expiration: 86400000 # 24 hours in milliseconds
