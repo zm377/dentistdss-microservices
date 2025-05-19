@@ -28,6 +28,7 @@ import press.mizhifei.dentist.auth.security.UserPrincipal;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 /**
@@ -97,6 +98,7 @@ public class AuthService {
             user.setFirstName(signUpRequest.getFirstName());
             user.setLastName(signUpRequest.getLastName());
             user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
+            user.setRoles(new HashSet<>(Collections.singleton(Role.fromString(signUpRequest.getRole()))));
             user.setVerificationCode(verificationCode);
             user.setVerificationCodeExpiry(codeExpiry);
             user.setUpdatedAt(LocalDateTime.now());
@@ -108,8 +110,8 @@ public class AuthService {
                 .lastName(signUpRequest.getLastName())
                 .email(signUpRequest.getEmail())
                 .password(passwordEncoder.encode(signUpRequest.getPassword()))
+                .roles(new HashSet<>(Collections.singleton(Role.fromString(signUpRequest.getRole()))))
                 .provider(AuthProvider.LOCAL)
-                .roles(Collections.singleton(Role.PATIENT))
                 .emailVerified(false)
                 // .emailVerificationToken(emailVerificationToken)
                 // .emailVerificationTokenExpiry(tokenExpiry)
@@ -159,7 +161,7 @@ public class AuthService {
             user.setVerificationCodeExpiry(codeExpiry);
             user.setClinicId(signUpStaffRequest.getClinicId());
             user.setClinicName(signUpStaffRequest.getClinicName());
-            user.setRoles(Collections.singleton(Role.valueOf(signUpStaffRequest.getRole())));
+            user.setRoles(new HashSet<>(Collections.singleton(Role.fromString(signUpStaffRequest.getRole()))));
             user.setEmailVerified(false);
             user.setEnabled(false);
             user.setAccountNonExpired(true);
@@ -174,7 +176,7 @@ public class AuthService {
                 .email(signUpStaffRequest.getEmail())
                 .password(passwordEncoder.encode(signUpStaffRequest.getPassword()))
                 .provider(AuthProvider.LOCAL)
-                .roles(Collections.singleton(Role.valueOf(signUpStaffRequest.getRole())))
+                .roles(new HashSet<>(Collections.singleton(Role.fromString(signUpStaffRequest.getRole()))))
                 .emailVerified(false)
                 .verificationCode(verificationCode)
                 .verificationCodeExpiry(codeExpiry)

@@ -1,28 +1,6 @@
 version: '3.8'
 
 services:
-  # MySQL Database
-  # mysql:
-  #   image: mysql:8.0
-  #   container_name: mysql
-  #   restart: always
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: rootpassword
-  #     MYSQL_DATABASE: dentistdss
-  #     MYSQL_USER: dentistdss
-  #     MYSQL_PASSWORD: dentistdss
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-  #     - ./databases/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-  #   networks:
-  #     - dentistdss-network
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "dentistdss", "-pdentistdss"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
 
   # PostgreSQL Database
   postgres:
@@ -116,24 +94,6 @@ services:
       # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
 
-  # OAuth Service
-  oauth-service:
-    build:
-      context: ./oauth-service
-    container_name: oauth-service
-    restart: always
-    ports:
-      - "8082:8082"
-    networks:
-      - dentistdss-network
-    depends_on:
-      - auth-service
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
-      - EUREKA_URI=http://discovery-server:8761/eureka
-      # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
 
 # Volumes
 volumes:

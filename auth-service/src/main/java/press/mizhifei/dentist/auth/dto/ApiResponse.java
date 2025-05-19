@@ -14,5 +14,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ApiResponse<T> {
     private boolean success;
-    private T message;
+    private T dataObject;
 }

@@ -1,5 +1,6 @@
 package press.mizhifei.dentist.auth.model;
 
+
 /**
  * @author zhifeimi
  *
@@ -10,5 +11,9 @@ public enum Role {
     CLINIC_ADMIN, // Dental Clinic Administrator
     DENTIST,
     RECEPTIONIST,
-    PATIENT
+    PATIENT;
+
+    public static Role fromString(String role) {
+        return Role.valueOf(role.toUpperCase());
+    }
 }

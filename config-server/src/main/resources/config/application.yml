@@ -7,13 +7,3 @@ management:
   endpoint:
     health:
       show-details: always
-
-
-
-
-# Email verification and notification settings
-notification:
-  email:
-    verification-base-url: http://localhost:3000/verify-email
-    from-email: admin@mizhifei.press
-    from-name: DentistDSS
