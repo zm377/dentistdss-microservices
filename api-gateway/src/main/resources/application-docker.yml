@@ -19,6 +19,7 @@ spring:
           '[/**]':
             allowedOrigins:
               - "https://dentist.mizhifei.press"
+              - "https://accounts.google.com"
             allowedMethods:
               - GET
               - POST
@@ -40,7 +41,7 @@ spring:
         - id: oauth-service-standard-paths-docker
           uri: lb://oauth-service
           predicates:
-            - Path=/login/oauth2/**, /oauth2/authorization/**
+            - Path=/login/oauth2/**, /oauth2/**
           filters:
             - StripPrefix=0
 

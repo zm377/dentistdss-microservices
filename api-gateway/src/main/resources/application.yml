@@ -14,6 +14,7 @@ spring:
             allowedOrigins:
               - "https://dentist.mizhifei.press"
               - "http://localhost:3000"
+              - "https://accounts.google.com"
             allowedMethods:
               - GET
               - POST
@@ -30,31 +31,25 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=0
-        - id: oauth-service
-          uri: lb://oauth-service
-          predicates:
-            - Path=/api/oauth2/**, /login/oauth2/**, /oauth2/authorization/**
-          filters:
-            - StripPrefix=1
 
         # Route for Spring Security OAuth2 endpoints (e.g. /login/oauth2/code/*, /oauth2/authorization/*)
         # These should typically be routed directly to the oauth-service without stripping an /api prefix if oauth-service is configured to handle them at root.
         - id: oauth-service-standard-paths
           uri: lb://oauth-service
           predicates:
-            - Path=/login/oauth2/**, /oauth2/authorization/**
+            - Path=/login/oauth2/**, /oauth2/**
           filters:
             - StripPrefix=0
 
         # Route for custom API endpoints on oauth-service, if any, under /api/oauth2
         # (Currently, oauth-service doesn't expose custom API endpoints, it only handles OAuth flow)
         # If it did, e.g. /api/oauth2/custom, this would route to /custom on oauth-service
-        # - id: oauth-service-api
-        #   uri: lb://oauth-service
-        #   predicates:
-        #     - Path=/api/oauth2/** 
-        #   filters:
-        #     - StripPrefix=1
+        - id: oauth-service-api
+          uri: lb://oauth-service
+          predicates:
+            - Path=/api/oauth2/** 
+          filters:
+            - StripPrefix=1
 
 eureka:
   client:

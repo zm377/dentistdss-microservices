@@ -263,11 +263,12 @@ public class AuthService {
     }
     
     private AuthResponse authenticateAndGenerateToken(User user) {
-        // Create authentication token
+        // Create authentication token with UserPrincipal as principal to avoid ClassCastException
+        UserPrincipal principal = UserPrincipal.create(user);
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getEmail(),
+                principal,
                 null, // No credentials needed as we're authenticating directly
-                UserPrincipal.create(user).getAuthorities()
+                principal.getAuthorities()
         );
         
         SecurityContextHolder.getContext().setAuthentication(authentication);

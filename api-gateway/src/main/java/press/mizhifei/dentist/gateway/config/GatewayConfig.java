@@ -21,7 +21,7 @@ public class GatewayConfig implements WebFluxConfigurer {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("https://dentist.mizhifei.press", "http://localhost:3000"));
+        corsConfig.setAllowedOrigins(Arrays.asList("https://dentist.mizhifei.press", "http://localhost:3000", "https://accounts.google.com"));
         corsConfig.setMaxAge(3600L);
         corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(Arrays.asList("*"));
