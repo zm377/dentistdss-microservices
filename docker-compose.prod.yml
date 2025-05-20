@@ -13,6 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dentistdss"]
       interval: 10s
@@ -60,6 +61,7 @@ services:
     restart: always
     depends_on:
       - api-gateway
+      - postgres
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
@@ -68,6 +70,21 @@ services:
     ports:
       - "8081:8081"
 
+  # OAuth Service
+  oauth-service:
+    image: dentistdss_oauth-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET will come from config-server for docker profile
+    ports:
+      - "8082:8082"
 
   # Optional MongoDB (exposes 27017) – placeholder for future use
   mongo:

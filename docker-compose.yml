@@ -15,6 +15,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     networks:
       - dentistdss-network
     healthcheck:
@@ -94,6 +95,25 @@ services:
       # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
 
+  # OAuth Service
+  oauth-service:
+    build:
+      context: ./oauth-service
+    container_name: oauth-service
+    restart: always
+    ports:
+      - "8082:8082"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      # GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET should be managed by the config-server for docker profile
 
 # Volumes
 volumes:

@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.AuthResponse;
+import press.mizhifei.dentist.auth.dto.ChangePasswordRequest;
 import press.mizhifei.dentist.auth.dto.LoginRequest;
+import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
 import press.mizhifei.dentist.auth.dto.SignUpRequest;
 import press.mizhifei.dentist.auth.dto.SignUpStaffRequest;
 import press.mizhifei.dentist.auth.dto.UserResponse;
@@ -335,4 +337,74 @@ public class AuthService {
         return new ApiResponse<UserResponse>(true, user.toUserResponse());
     }
     
+    @Transactional
+    public ApiResponse<AuthResponse> processOAuthLogin(OAuthLoginRequest oAuthLoginRequest) {
+        Optional<User> userOptionalByProviderId = userRepository.findByProviderIdAndProvider(oAuthLoginRequest.getProviderId(), AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()));
+
+        User user;
+        if (userOptionalByProviderId.isPresent()) {
+            // User found by provider ID, this is a returning OAuth user
+            user = userOptionalByProviderId.get();
+            // Optionally update first/last name if they changed in Google profile
+            user.setFirstName(oAuthLoginRequest.getFirstName());
+            user.setLastName(oAuthLoginRequest.getLastName());
+            user.setUpdatedAt(LocalDateTime.now());
+            user = userRepository.save(user);
+        } else {
+            // No user found by provider ID, check by email
+            Optional<User> userOptionalByEmail = userRepository.findByEmail(oAuthLoginRequest.getEmail());
+            if (userOptionalByEmail.isPresent()) {
+                // User found by email, link this OAuth account to the existing local account
+                user = userOptionalByEmail.get();
+                user.setProvider(AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()));
+                user.setProviderId(oAuthLoginRequest.getProviderId());
+                // If names are empty in local but available from OAuth, set them
+                if (user.getFirstName() == null || user.getFirstName().isEmpty()) {
+                    user.setFirstName(oAuthLoginRequest.getFirstName());
+                }
+                if (user.getLastName() == null || user.getLastName().isEmpty()) {
+                    user.setLastName(oAuthLoginRequest.getLastName());
+                }
+                user.setEmailVerified(true); // Email is verified by Google
+                user.setEnabled(true); // Enable account
+                user.setUpdatedAt(LocalDateTime.now());
+                user = userRepository.save(user);
+            } else {
+                // New user, create an account
+                user = User.builder()
+                    .email(oAuthLoginRequest.getEmail())
+                    .firstName(oAuthLoginRequest.getFirstName())
+                    .lastName(oAuthLoginRequest.getLastName())
+                    .provider(AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()))
+                    .providerId(oAuthLoginRequest.getProviderId())
+                    .roles(new HashSet<>(Collections.singleton(Role.PATIENT))) // Default role for new OAuth users
+                    .emailVerified(true) // Email is verified by Google
+                    .enabled(true)
+                    .accountNonExpired(true)
+                    .credentialsNonExpired(true)
+                    .accountNonLocked(true)
+                    .build();
+                user = userRepository.save(user);
+            }
+        }
+
+        // Authenticate and generate token for the user
+        AuthResponse authResponse = authenticateAndGenerateToken(user);
+        return new ApiResponse<>(true, authResponse);
+    }
+
+    @Transactional
+    public ApiResponse<String> changePassword(ChangePasswordRequest changePasswordRequest) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ApiResponse<String>(false, "User not authenticated");
+        }
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        User user = userRepository.findByEmail(userPrincipal.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        return new ApiResponse<String>(true, "Password changed successfully");
+    }
 }

@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.AuthResponse;
+import press.mizhifei.dentist.auth.dto.ChangePasswordRequest;
 import press.mizhifei.dentist.auth.dto.LoginRequest;
+import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
 import press.mizhifei.dentist.auth.dto.SignUpRequest;
 import press.mizhifei.dentist.auth.dto.SignUpStaffRequest;
 import press.mizhifei.dentist.auth.dto.UserResponse;
@@ -28,6 +30,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.authenticateUser(loginRequest));
+    }
+
+    @PostMapping("/oauth/process")
+    public ResponseEntity<ApiResponse<AuthResponse>> processOAuthLogin(@Valid @RequestBody OAuthLoginRequest oAuthLoginRequest) {
+        return ResponseEntity.ok(authService.processOAuthLogin(oAuthLoginRequest));
     }
 
     @PostMapping("/signup")
@@ -65,5 +72,10 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         return ResponseEntity.ok(authService.getCurrentUser());
+    }
+
+    @PostMapping("/password/change")
+    public ResponseEntity<ApiResponse<String>> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+        return ResponseEntity.ok(authService.changePassword(changePasswordRequest));
     }
 }
