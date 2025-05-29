@@ -1,7 +1,8 @@
 package press.mizhifei.dentist.auth.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,10 +14,13 @@ import lombok.NoArgsConstructor;
  *
  */
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmailVerificationRequest {
-
-    @NotBlank(message = "Verification token is required")
-    private String token;
+public class ReviewApprovalRequest {
+    
+    @NotNull(message = "Approval decision is required")
+    private Boolean approved;
+    
+    private String reviewNotes;
 } 

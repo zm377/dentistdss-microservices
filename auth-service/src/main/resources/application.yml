@@ -5,13 +5,13 @@ spring:
   application:
     name: auth-service
   config:
-    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@localhost:8888
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@localhost:8888
 
   # Database Configuration (PostgreSQL)
   datasource:
     url: jdbc:postgresql://localhost:5432/dentistdss
     username: dentistdss
-    password: dentistdss
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -23,10 +23,10 @@ spring:
 
   # Mail Configuration
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:dentistdss@gmail.com}
-    password: ${MAIL_PASSWORD:bxqwhmquxcjtarwx}
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -43,7 +43,7 @@ eureka:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:c0df5aab259f07ce843f31c78dcc9b49f1b937b01505ef64f9fde2a4242e5a6a6fde43c9469b227be8c0551ab39e234c7ac368a0e4a2d0f803afa7f8d91991cc6832679077d4616487374c74695ffd086265f35fef3ce8adf8780b06d2d394b3b482239407997b19d42644c88c705c207aae1235ccba2ac6e0e7a46e1f1e092d417a3448c8e55b9fef52d5d138ed7a275c956c5ea37f52d944fbfea747f30474448613bd7de5fe0ddaf41842581f194c0e72a1baf771da5823ebb99d9aae77dfe2a6e84c4360e7642fcc0016eb4629ba44bcf94f3d4c18689719c14f731f4813ad1995f622165b10672b86a1a33ab7b83276472672ba65f621fcb7f67b060ef4a9e859c9f8c129cf2d36cae084d10fe23f0fbb5539a118d2c1d8545f5727ae53249394c7ce5bc09970dcb68ade17f2d50ec5bfdee30630681b0687aa3115349c7b00841ed88b656d72139db5747c26630bf4711db8a9d662d0c42545793b7c3adf7ae989a45256be584f5b9dd2d93d5a464aca2cddcab53504c3004cbdd816e0f0c545ebd9304cad36addc23420067a9211a860e11a8ee11fc7a87331640ab24ffe95760d6c505759cd04ee574a2d12ae727b3b4f08bef2d829e79a57719fa8fd024f66f830410cd1bc027f060f5482682c5ec5f0fe96e437356e215c98fd2388279338bfc807445113b1af2bec30fe962cb8e9fa5b6a4e1dc1e4b723c2097f4}
+  secret: ${JWT_SECRET}
   expiration: 86400000 # 24 hours in milliseconds
 
 logging:

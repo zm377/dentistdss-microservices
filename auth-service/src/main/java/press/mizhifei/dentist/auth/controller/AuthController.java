@@ -10,6 +10,7 @@ import press.mizhifei.dentist.auth.dto.AuthResponse;
 import press.mizhifei.dentist.auth.dto.ChangePasswordRequest;
 import press.mizhifei.dentist.auth.dto.LoginRequest;
 import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
+import press.mizhifei.dentist.auth.dto.SignUpClinicAdminRequest;
 import press.mizhifei.dentist.auth.dto.SignUpRequest;
 import press.mizhifei.dentist.auth.dto.SignUpStaffRequest;
 import press.mizhifei.dentist.auth.dto.UserResponse;
@@ -17,18 +18,22 @@ import press.mizhifei.dentist.auth.dto.VerifyCodeRequest;
 import press.mizhifei.dentist.auth.service.AuthService;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<?>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.authenticateUser(loginRequest));
     }
 
@@ -42,9 +47,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.registerUser(signUpRequest));
     }
 
-    @PostMapping("/signup/staff")
+    @PostMapping("/signup/clinic/staff")
     public ResponseEntity<ApiResponse<String>> registerStaff(@Valid @RequestBody SignUpStaffRequest signUpStaffRequest) {
         return ResponseEntity.ok(authService.registerStaff(signUpStaffRequest));
+    }
+
+    @PostMapping("/signup/clinic/admin")
+    public ResponseEntity<ApiResponse<String>> registerClinicAdmin(@Valid @RequestBody SignUpClinicAdminRequest signUpClinicAdminRequest) {
+        return ResponseEntity.ok(authService.registerClinicAdmin(signUpClinicAdminRequest));
     }
 
     @PostMapping("/signup/verify/code/resend")
@@ -66,7 +76,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> logoutUser() {
         // JWT is stateless, so we don't need to do anything on the server side
         // The client should remove the token from local storage
-        return ResponseEntity.ok(new ApiResponse<String>(true, "User logged out successfully"));
+        return ResponseEntity.ok(ApiResponse.successMessage("User logged out successfully"));
     }
 
     @GetMapping("/me")

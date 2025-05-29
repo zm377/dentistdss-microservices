@@ -12,7 +12,11 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @Data
 @AllArgsConstructor

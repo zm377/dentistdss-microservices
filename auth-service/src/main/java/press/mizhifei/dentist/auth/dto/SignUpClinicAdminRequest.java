@@ -17,7 +17,35 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SignUpRequest {
+public class SignUpClinicAdminRequest {
+
+
+    @NotBlank(message = "Clinic name is required")
+    private String clinicName;
+
+    @NotBlank(message = "Address is required")
+    private String address;
+
+    @NotBlank(message = "City is required")
+    private String city;
+
+    @NotBlank(message = "State is required")
+    private String state;
+
+    @NotBlank(message = "Zip code is required")
+    private String zipCode;
+
+    @NotBlank(message = "Country is required")
+    private String country;
+
+    @NotBlank(message = "Phone number is required")
+    private String phoneNumber;
+
+    @NotBlank(message = "Business email is required")
+    @Email(message = "Business email should be valid")
+    private String businessEmail;
+    
+    
 
     @NotBlank(message = "First name is required")
     private String firstName;
@@ -32,7 +60,8 @@ public class SignUpRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+    
+    
+    
 
-    // @NotBlank(message = "Role is required")
-    private String role = "patient";
 }

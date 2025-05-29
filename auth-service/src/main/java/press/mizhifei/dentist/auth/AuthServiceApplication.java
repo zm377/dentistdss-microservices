@@ -7,7 +7,11 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @SpringBootApplication
 @EnableDiscoveryClient

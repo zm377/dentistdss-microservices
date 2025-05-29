@@ -15,8 +15,11 @@ import java.util.Date;
 import java.util.stream.Collectors;
 
 /**
- * JWT token provider for authentication and authorization
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @Slf4j
 @Component

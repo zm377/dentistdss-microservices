@@ -1,11 +1,13 @@
 package press.mizhifei.dentist.auth.model;
 
-
 /**
- * @author zhifeimi
  *
- * Defines the roles available in the system.
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
+
 public enum Role {
     SYSTEM_ADMIN,
     CLINIC_ADMIN, // Dental Clinic Administrator

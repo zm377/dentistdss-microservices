@@ -2,20 +2,25 @@ package press.mizhifei.dentist.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class SignUpStaffRequest {
 
-    @NotBlank(message = "Clinic id is required")
+    @NotNull(message = "Clinic id is required")
     private Long clinicId;
 
     @NotBlank(message = "Clinic name is required")

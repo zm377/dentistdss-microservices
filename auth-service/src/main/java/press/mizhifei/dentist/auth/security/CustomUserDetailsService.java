@@ -10,7 +10,11 @@ import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.repository.UserRepository;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @Service
 @RequiredArgsConstructor

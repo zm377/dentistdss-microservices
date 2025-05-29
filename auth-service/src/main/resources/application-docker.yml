@@ -5,13 +5,13 @@ spring:
   application:
     name: auth-service
   config:
-    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
 
   # Database Configuration (PostgreSQL)
   datasource:
     url: jdbc:postgresql://postgres:5432/dentistdss
     username: dentistdss
-    password: dentistdss
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,6 +20,17 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 eureka:
   client:
@@ -27,3 +38,23 @@ eureka:
       defaultZone: http://discovery-server:8761/eureka
   instance:
     preferIpAddress: true
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000 # 24 hours in milliseconds
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework: TRACE
+
+# App Configuration
+app:
+  email-verification:
+    token-expiry-minutes: 43200 # 30 days in minutes
+    code-expiry-minutes: 10 # 10 minutes in minutes
+    base-url: ${BASE_URL:https://dentist.mizhifei.press}
+
+
+

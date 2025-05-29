@@ -1,10 +1,10 @@
 spring:
   # Mail Configuration - using the same SMTP settings as in main application.yml
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:dentistdss@gmail.com}
-    password: ${MAIL_PASSWORD:bxqwhmquxcjtarwx} # Use the actual password from environment variable
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD} # Use the actual password from environment variable
     properties:
       mail:
         smtp:

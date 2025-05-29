@@ -1,9 +1,11 @@
 package press.mizhifei.dentist.auth.model;
 
 /**
- * @author zhifeimi
  *
- * Enum for Authentication Provider
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 public enum AuthProvider {
     LOCAL,

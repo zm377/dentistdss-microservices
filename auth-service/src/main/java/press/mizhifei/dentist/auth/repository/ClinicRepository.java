@@ -9,11 +9,18 @@ import org.springframework.lang.NonNull;
 import press.mizhifei.dentist.auth.model.Clinic;
 
 /**
+ *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
  */
 @Repository
 public interface ClinicRepository extends JpaRepository<Clinic, Long> {
 
     @NonNull
     Optional<Clinic> findById(@NonNull Long id);
+
+    @NonNull
+    Optional<Clinic> findByEmail(@NonNull String email);
 }
