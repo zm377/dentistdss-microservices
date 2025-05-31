@@ -215,6 +215,8 @@ public class AuthService {
                     .emailVerified(false)
                     .verificationCode(verificationCode)
                     .verificationCodeExpiry(codeExpiry)
+                    .clinicId(signUpStaffRequest.getClinicId())
+                    .clinicName(signUpStaffRequest.getClinicName())
                     .enabled(false)
                     .accountNonExpired(true)
                     .credentialsNonExpired(true)
@@ -308,6 +310,7 @@ public class AuthService {
                     .country(signUpClinicAdminRequest.getCountry())
                     .phoneNumber(signUpClinicAdminRequest.getPhoneNumber())
                     .email(signUpClinicAdminRequest.getBusinessEmail())
+                    .website(signUpClinicAdminRequest.getWebsite())
                     .enabled(false)
                     .approved(false)
                     .approvalBy(null)
@@ -324,6 +327,7 @@ public class AuthService {
             clinic.setZipCode(signUpClinicAdminRequest.getZipCode());
             clinic.setCountry(signUpClinicAdminRequest.getCountry());
             clinic.setPhoneNumber(signUpClinicAdminRequest.getPhoneNumber());
+            clinic.setWebsite(signUpClinicAdminRequest.getWebsite());
             clinic.setUpdatedAt(LocalDateTime.now());
             clinicRepository.save(clinic);
         }

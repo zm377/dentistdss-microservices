@@ -33,4 +33,5 @@ public class UserResponse {
     private Set<Role> roles = new HashSet<>();
     private Long clinicId;
     private String clinicName;
+    private Boolean enabled;
 }

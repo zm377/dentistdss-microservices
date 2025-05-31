@@ -1,10 +1,20 @@
 package press.mizhifei.dentist.auth.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import press.mizhifei.dentist.auth.annotation.RequireRoles;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
+import press.mizhifei.dentist.auth.dto.UserResponse;
+import press.mizhifei.dentist.auth.model.Role;
+import press.mizhifei.dentist.auth.security.JwtTokenProvider;
 import press.mizhifei.dentist.auth.service.UserService;
+
+import java.util.List;
+
+import static press.mizhifei.dentist.auth.util.HttpUtil.getJwtFromRequest;
 
 /**
  *
@@ -19,6 +29,39 @@ import press.mizhifei.dentist.auth.service.UserService;
 public class UserController {
 
     private final UserService userService;
+
+    private final JwtTokenProvider jwtTokenProvider;
+
+
+    @GetMapping("/list/all")
+    @RequireRoles({Role.SYSTEM_ADMIN, Role.CLINIC_ADMIN})
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listAllUsers(HttpServletRequest request) {
+
+        String jwt = getJwtFromRequest(request);
+
+        String userEmail = jwtTokenProvider.getEmailFromJWT(jwt);
+        String rolesString = jwtTokenProvider.getRolesFromJWT(jwt);
+        if (!StringUtils.hasText(userEmail) || !StringUtils.hasText(rolesString)) {
+            return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Invalid authentication token"));
+        }
+        List<String> userRoles = List.of(rolesString.split(","));
+
+        boolean hasClinicAdmin = userRoles.contains(Role.CLINIC_ADMIN.name());
+        boolean hasSystemAdmin = userRoles.contains(Role.SYSTEM_ADMIN.name());
+
+        if (!hasSystemAdmin && !hasClinicAdmin) {
+            return ResponseEntity.status(403)
+                    .body(ApiResponse.error("You are not a legal administrator"));
+        }
+        List<UserResponse> users;
+        if (hasClinicAdmin) {
+            users = userService.listClinicUsers(userEmail);
+        } else {
+            users = userService.listAllUsers();
+        }
+        return ResponseEntity.ok(ApiResponse.success(users));
+    }
 
     @GetMapping("/{id}/email")
     public String getUserEmail(@PathVariable Long id) {

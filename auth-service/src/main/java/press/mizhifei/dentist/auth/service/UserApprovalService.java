@@ -149,6 +149,29 @@ public class UserApprovalService {
     }
 
     @Transactional(readOnly = true)
+    public List<ApprovalRequestResponse> getPendingApprovalRequests(String userEmail) {
+        // Get user information to determine clinic filtering
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + userEmail));
+
+        List<UserApprovalRequest> pendingRequests;
+
+        // Filter by clinic if user has clinic_id and is CLINIC_ADMIN
+        if (user.getClinicId() != null && user.getRoles().contains(Role.CLINIC_ADMIN)) {
+            pendingRequests = approvalRequestRepository
+                    .findByClinicIdAndStatusOrderByCreatedAtDesc(user.getClinicId(), User.ApprovalStatus.PENDING.toString());
+        } else {
+            // If no clinic_id, return all pending requests (for SYSTEM_ADMIN)
+            pendingRequests = approvalRequestRepository
+                    .findByStatus(User.ApprovalStatus.PENDING.toString());
+        }
+
+        return pendingRequests.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<ApprovalRequestResponse> getClinicPendingApprovals(Long clinicId) {
         List<UserApprovalRequest> pendingRequests = approvalRequestRepository
                 .findByClinicIdAndStatusOrderByCreatedAtDesc(clinicId, User.ApprovalStatus.PENDING.toString());

@@ -100,6 +100,36 @@ public class JwtTokenProvider {
     }
 
     /**
+     * Extracts the email from a JWT token
+     * @param token the JWT token
+     * @return the email
+     */
+    public String getEmailFromJWT(String token) {
+        Jws<Claims> claimsJws = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token);
+
+        Claims claims = claimsJws.getPayload();
+        return claims.get("email", String.class);
+    }
+
+    /**
+     * Extracts the roles from a JWT token
+     * @param token the JWT token
+     * @return the roles as a comma-separated string
+     */
+    public String getRolesFromJWT(String token) {
+        Jws<Claims> claimsJws = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token);
+
+        Claims claims = claimsJws.getPayload();
+        return claims.get("roles", String.class);
+    }
+
+    /**
      * Creates a signing key from the JWT secret
      * @return the signing key
      */

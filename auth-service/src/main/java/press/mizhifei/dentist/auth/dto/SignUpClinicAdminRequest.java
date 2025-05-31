@@ -44,6 +44,8 @@ public class SignUpClinicAdminRequest {
     @NotBlank(message = "Business email is required")
     @Email(message = "Business email should be valid")
     private String businessEmail;
+
+    private String website;
     
     
 

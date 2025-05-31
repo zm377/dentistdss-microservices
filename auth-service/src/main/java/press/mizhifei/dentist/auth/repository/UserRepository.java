@@ -8,6 +8,7 @@ import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.model.AuthProvider;
 import press.mizhifei.dentist.auth.model.Role;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +34,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u JOIN u.roles r WHERE u.clinicId = :clinicId AND r = :role")
     List<User> findByClinicIdAndRoles(@Param("clinicId") Long clinicId, @Param("role") Role role);
+
+    @Query("SELECT u FROM User u WHERE u.clinicId = :clinicId")
+    List<User> findByClinicId(@Param("clinicId") Long clinicId);
 }

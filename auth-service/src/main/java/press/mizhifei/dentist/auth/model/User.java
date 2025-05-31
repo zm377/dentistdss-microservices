@@ -188,6 +188,7 @@ public class User {
             .roles(roles)
             .clinicId(clinicId)
             .clinicName(clinicName)
+            .enabled(enabled)
             .phone(phone)
             .address(address)
             .profilePictureUrl(profilePictureUrl)
