@@ -39,6 +39,13 @@ spring:
         jwt:
           jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
 
+# OpenAPI/SpringDoc Configuration - DISABLED for production
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 eureka:
   client:
     serviceUrl:
