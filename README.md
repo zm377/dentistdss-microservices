@@ -117,9 +117,24 @@ The system consists of the following microservices:
       - System health monitoring
       - Administrative functions
 
+### Communication Services
+
+11. **Notification Service**
+    - **Purpose**: Handles all notification and communication features
+    - **Port**: 8088
+    - **Features**:
+      - Multi-channel notifications (Email, SMS, Push, In-App)
+      - Template-based notification system with variable substitution
+      - Scheduled notification delivery
+      - Notification history and read status tracking
+      - Email service integration with SMTP
+      - Asynchronous notification processing
+      - Integration with other services via Feign clients
+      - Notification templates management
+
 ### AI and Analytics Services
 
-11. **GenAI Service**
+12. **GenAI Service**
     - **Purpose**: Provides AI-powered chatbot and decision support features
     - **Port**: 8084
     - **Technology**: Spring AI with OpenAI integration
@@ -133,7 +148,7 @@ The system consists of the following microservices:
       - Integration with patient records for personalized responses
       - Streaming API for real-time chat interactions
 
-12. **Audit Service**
+13. **Audit Service**
     - **Purpose**: Tracks and logs all system activities for compliance
     - **Port**: 8087
     - **Features**:
@@ -146,7 +161,7 @@ The system consists of the following microservices:
 
 ### Monitoring and Administration
 
-13. **Admin Server**
+14. **Admin Server**
     - **Purpose**: Provides administrative monitoring and management interface
     - **Port**: 9090
     - **Technology**: Spring Boot Admin
@@ -196,6 +211,7 @@ The startup order is:
 9. Clinic Service
 10. Patient Service
 11. Admin Server
+12. Notification Service
 
 #### Stopping Local Services
 
@@ -331,6 +347,7 @@ The project includes several scripts to help with development and deployment:
 - **Patient Service**: http://localhost:8085
 - **System Service**: http://localhost:8086
 - **Audit Service**: http://localhost:8087
+- **Notification Service**: http://localhost:8088
 
 ### Monitoring & Administration
 - **Admin Server**: http://localhost:9090
