@@ -2,6 +2,15 @@ HELP.md
 target/
 **/target/
 !.mvn/wrapper/maven-wrapper.jar
+privkey.pem
+fullchain.pem
+generate-ssl-key.sh
+lessons.txt
+
+logs/
+.env
+c.sh
+
 # Exclude target directories but keep specific files needed for builds
 # !**/src/main/**/target/
 # !**/src/test/**/target/

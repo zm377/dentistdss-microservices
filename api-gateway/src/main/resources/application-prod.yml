@@ -1,0 +1,200 @@
+# =============================================================================
+# API Gateway Configuration - Production Profile
+# =============================================================================
+
+server:
+  port: 443
+  ssl:
+    enabled: true
+    key-store: file:/app/certs/keystore.p12
+    key-store-password: ${CA_STOREPASS}
+    key-store-type: PKCS12
+    key-alias: api-gateway
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  cloud:
+    gateway:
+      # =============================================================================
+      # Global Configuration
+      # =============================================================================
+      server:
+        webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "https://dentist.mizhifei.press"
+                  - "https://accounts.google.com"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                  - PATCH
+                  - HEAD
+                allowedHeaders: "*"
+                allowCredentials: true
+                exposedHeaders: "Authorization"
+                maxAge: 3600
+          routes:
+            # =============================================================================
+            # Authentication & Authorization Services
+            # =============================================================================
+
+            # Authentication Service - JWT token management
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+            # OAuth Service - OAuth2 standard endpoints (no /api prefix)
+            - id: oauth-service-standard-paths
+              uri: lb://oauth-service
+              predicates:
+                - Path=/login/oauth2/**, /oauth2/**
+              filters:
+                - StripPrefix=0
+
+            # OAuth Service - Custom API endpoints (with /api prefix)
+            - id: oauth-service-api
+              uri: lb://oauth-service
+              predicates:
+                - Path=/api/oauth2/**
+              filters:
+                - StripPrefix=1
+
+            # =============================================================================
+            # Business Domain Services
+            # =============================================================================
+
+            # Clinic Management Service
+            - id: clinic-service
+              uri: lb://clinic-service
+              predicates:
+                - Path=/api/clinic/**
+              filters:
+                - StripPrefix=1
+
+            # Patient Management Service
+            - id: patient-service
+              uri: lb://patient-service
+              predicates:
+                - Path=/api/patient/**
+              filters:
+                - StripPrefix=1
+
+            # AI/GenAI Service
+            - id: genai-service
+              uri: lb://genai-service
+              predicates:
+                - Path=/api/genai/**
+              filters:
+                - PreserveHostHeader
+                - StripPrefix=1
+
+            # =============================================================================
+            # System & Infrastructure Services
+            # =============================================================================
+
+            # System Management Service
+            - id: system-service
+              uri: lb://system-service
+              predicates:
+                - Path=/api/system/**
+              filters:
+                - StripPrefix=1
+
+            # Audit & Logging Service
+            - id: audit-service
+              uri: lb://audit-service
+              predicates:
+                - Path=/api/audit/**
+              filters:
+                - StripPrefix=1
+
+            # Notification Service
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notification/**
+              filters:
+                - StripPrefix=1
+
+            # Admin Server (Spring Boot Admin) - Limited access in production
+            - id: admin-server
+              uri: lb://admin-server
+              predicates:
+                - Path=/admin, /admin/**
+              filters:
+                - StripPrefix=0
+
+      # =============================================================================
+      # Route Configuration - Production (No OpenAPI routes)
+      # =============================================================================
+
+# =============================================================================
+# Service Discovery Configuration
+# =============================================================================
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    preferIpAddress: false
+    securePortEnabled: true
+    nonSecurePortEnabled: false
+    securePort: 443
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+# Configure reactor netty server to use virtual threads if running on Java 21+
+reactor:
+  netty:
+    http:
+      server:
+        accessLogEnabled: false  # Disabled in production for performance
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration - DISABLED for Production
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# =============================================================================
+# Logging Configuration - Production
+# =============================================================================
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework: WARN
+    org.springframework.cloud.gateway: INFO
+    reactor.netty: WARN
+    root: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =============================================================================
+# Management & Actuator Configuration - Production
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh  # Limited endpoints in production
+  endpoint:
+    health:
+      show-details: when-authorized  # Restricted health details
+    gateway:
+      access: none # Disable gateway actuator in production

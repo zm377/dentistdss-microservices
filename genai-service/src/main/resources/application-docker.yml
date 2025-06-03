@@ -1,0 +1,42 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: genai-service
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  data:
+    mongodb:
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
+
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+
+# OpenAPI/SpringDoc Configuration - enabled for docker development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework: INFO

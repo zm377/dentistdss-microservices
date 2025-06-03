@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_DB: dentistdss
       POSTGRES_USER: dentistdss
-      POSTGRES_PASSWORD: dentistdss
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -20,6 +20,28 @@ services:
       - dentistdss-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dentistdss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  
+  # MongoDB Database
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=dentistdss
+      - MONGO_INITDB_ROOT_USERNAME=dentistdss
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - dentistdss-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' --username dentistdss --password ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,6 +64,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - LOGGING_LEVEL_ROOT=DEBUG
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - GIT_REPO=${GIT_REPO}
 
   # Discovery Server (Eureka)
   discovery-server:
@@ -57,7 +82,9 @@ services:
       - config-server
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
 
   # API Gateway
   api-gateway:
@@ -73,8 +100,11 @@ services:
       - discovery-server
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
+      - CA_STOREPASS=${CA_STOREPASS}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
 
   # Auth Service
   auth-service:
@@ -90,10 +120,21 @@ services:
       - api-gateway
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
-      # - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/dentistdss?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - JWT_RSA_PRIVATE_KEY=${JWT_RSA_PRIVATE_KEY}
+      - JWT_RSA_PUBLIC_KEY=${JWT_RSA_PUBLIC_KEY}
+      - JWT_RSA_KEY_ID=${JWT_RSA_KEY_ID}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
 
   # OAuth Service
   oauth-service:
@@ -110,16 +151,176 @@ services:
       - postgres
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       # GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET should be managed by the config-server for docker profile
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+  # Clinic Service
+  clinic-service:
+    build:
+      context: ./clinic-service
+    container_name: clinic-service
+    restart: always
+    ports:
+      - "8083:8083"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+
+  # Admin Server
+  admin-server:
+    build:
+      context: ./admin-server
+    container_name: admin-server
+    restart: always
+    ports:
+      - "9090:9090"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    restart: always
+    ports:
+      - "8088:8088"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+
+  # GenAI Service
+  genai-service:
+    build:
+      context: ./genai-service
+    container_name: genai-service
+    restart: always
+    ports:
+      - "8084:8084"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+
+  # Patient Service
+  patient-service:
+    build:
+      context: ./patient-service
+    container_name: patient-service
+    restart: always
+    ports:
+      - "8085:8085"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+
+  # System Service
+  system-service:
+    build:
+      context: ./system-service
+    container_name: system-service
+    restart: always
+    ports:
+      - "8086:8086"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+
+  # Audit Service
+  audit-service:
+    build:
+      context: ./audit-service
+    container_name: audit-service
+    restart: always
+    ports:
+      - "8087:8087"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATA_MONGODB_URI=mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
 # Volumes
 volumes:
-  # mysql_data:
-  #   driver: local
   postgres_data:
+    driver: local
+  mongo_data:
     driver: local
 
 # Networks

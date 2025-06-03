@@ -1,0 +1,30 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: audit-service
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  data:
+    mongodb:
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss
+      database: dentistdss
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG 

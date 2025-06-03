@@ -7,9 +7,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 /**
  *
  * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
  *
- * API Gateway application using Spring WebFlux and Spring Cloud Gateway.
- * Configured to route requests to microservices registered with Eureka.
  */
 @SpringBootApplication
 @EnableDiscoveryClient

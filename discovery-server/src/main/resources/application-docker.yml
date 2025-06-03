@@ -5,7 +5,7 @@ spring:
   application:
     name: discovery-server
   config:
-    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
 
 eureka:
   instance:
@@ -15,3 +15,11 @@ eureka:
     fetchRegistry: false
     serviceUrl:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+# Configure logging for components
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework.cloud: INFO
+    org.springframework.web.reactive: INFO
+    reactor.netty: INFO

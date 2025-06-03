@@ -7,7 +7,7 @@
     <parent>
         <groupId>press.mizhifei.dentist</groupId>
         <artifactId>dentistdss-microservices</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.9.1</version>
     </parent>
 
     <artifactId>discovery-server</artifactId>
@@ -29,10 +29,7 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -40,6 +37,38 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- Development and Docker profiles include OpenAPI -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>docker</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Production profile excludes OpenAPI -->
+        <profile>
+            <id>prod</id>
+            <!-- No OpenAPI dependencies -->
+        </profile>
+    </profiles>
 
     <build>
         <plugins>

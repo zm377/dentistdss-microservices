@@ -1,57 +1,215 @@
+# =============================================================================
+# API Gateway Configuration - Docker Profile
+# =============================================================================
+
 server:
   port: 443
   ssl:
     enabled: true
-    key-store-type: PKCS12
     key-store: file:/app/certs/keystore.p12
-    key-store-password: password
+    key-store-password: ${CA_STOREPASS}
+    key-store-type: PKCS12
     key-alias: api-gateway
 
 spring:
   application:
     name: api-gateway
   config:
-    import: optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "https://dentist.mizhifei.press"
-              - "https://accounts.google.com"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
-      routes:
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=0
+      # =============================================================================
+      # Global Configuration
+      # =============================================================================
+      server:
+        webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "https://dentist.mizhifei.press"
+                  - "https://accounts.google.com"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                  - PATCH
+                  - HEAD
+                allowedHeaders: "*"
+                allowCredentials: true
+                exposedHeaders: "Authorization"
+                maxAge: 3600
+          routes:
+            # =============================================================================
+            # Authentication & Authorization Services
+            # =============================================================================
 
-        # OAuth Service Routes
-        - id: oauth-service-standard-paths-docker
-          uri: lb://oauth-service
-          predicates:
-            - Path=/login/oauth2/**, /oauth2/**
-          filters:
-            - StripPrefix=0
+            # Authentication Service - JWT token management
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
 
-        # - id: oauth-service-api-docker # If custom /api/oauth2/** endpoints were needed
-        #   uri: lb://oauth-service
-        #   predicates:
-        #     - Path=/api/oauth2/**
-        #   filters:
-        #     - StripPrefix=1
+            # OAuth Service - OAuth2 standard endpoints (no /api prefix)
+            - id: oauth-service-standard-paths
+              uri: lb://oauth-service
+              predicates:
+                - Path=/login/oauth2/**, /oauth2/**
+              filters:
+                - StripPrefix=0
 
+            # OAuth Service - Custom API endpoints (with /api prefix)
+            - id: oauth-service-api
+              uri: lb://oauth-service
+              predicates:
+                - Path=/api/oauth2/**
+              filters:
+                - StripPrefix=1
+
+            # =============================================================================
+            # Business Domain Services
+            # =============================================================================
+
+            # Clinic Management Service
+            - id: clinic-service
+              uri: lb://clinic-service
+              predicates:
+                - Path=/api/clinic/**
+              filters:
+                - StripPrefix=1
+
+            # Patient Management Service
+            - id: patient-service
+              uri: lb://patient-service
+              predicates:
+                - Path=/api/patient/**
+              filters:
+                - StripPrefix=1
+
+            # AI/GenAI Service
+            - id: genai-service
+              uri: lb://genai-service
+              predicates:
+                - Path=/api/genai/**
+              filters:
+                - PreserveHostHeader
+                - StripPrefix=1
+
+            # =============================================================================
+            # System & Infrastructure Services
+            # =============================================================================
+
+            # System Management Service
+            - id: system-service
+              uri: lb://system-service
+              predicates:
+                - Path=/api/system/**
+              filters:
+                - StripPrefix=1
+
+            # Audit & Logging Service
+            - id: audit-service
+              uri: lb://audit-service
+              predicates:
+                - Path=/api/audit/**
+              filters:
+                - StripPrefix=1
+
+            # Notification Service
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notification/**
+              filters:
+                - StripPrefix=1
+
+            # Admin Server (Spring Boot Admin)
+            - id: admin-server
+              uri: lb://admin-server
+              predicates:
+                - Path=/admin, /admin/**
+              filters:
+                - StripPrefix=0
+
+            # =============================================================================
+            # OpenAPI Documentation Routes (Docker Development)
+            # =============================================================================
+
+            # Authentication Service Documentation
+            - id: auth-service-openapi
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # OAuth Service Documentation
+            - id: oauth-service-openapi
+              uri: lb://oauth-service
+              predicates:
+                - Path=/oauth-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # Clinic Service Documentation
+            - id: clinic-service-openapi
+              uri: lb://clinic-service
+              predicates:
+                - Path=/clinic-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # Patient Service Documentation
+            - id: patient-service-openapi
+              uri: lb://patient-service
+              predicates:
+                - Path=/patient-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # GenAI Service Documentation
+            - id: genai-service-openapi
+              uri: lb://genai-service
+              predicates:
+                - Path=/genai-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # System Service Documentation
+            - id: system-service-openapi
+              uri: lb://system-service
+              predicates:
+                - Path=/system-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # Audit Service Documentation
+            - id: audit-service-openapi
+              uri: lb://audit-service
+              predicates:
+                - Path=/audit-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            # Notification Service Documentation
+            - id: notification-service-openapi
+              uri: lb://notification-service
+              predicates:
+                - Path=/notification-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+      # =============================================================================
+      # Route Configuration
+      # =============================================================================
+
+# =============================================================================
+# Service Discovery Configuration
+# =============================================================================
 eureka:
   client:
     serviceUrl:
@@ -62,9 +220,71 @@ eureka:
     nonSecurePortEnabled: false
     securePort: 443
 
+# =============================================================================
+# Server Configuration
+# =============================================================================
 # Configure reactor netty server to use virtual threads if running on Java 21+
 reactor:
   netty:
     http:
       server:
         accessLogEnabled: true
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration - Docker Development Profile
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: true
+    groups:
+      enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - name: api-gateway
+        url: /v3/api-docs
+      - name: auth-service
+        url: /auth-service/v3/api-docs
+      - name: oauth-service
+        url: /oauth-service/v3/api-docs
+      - name: clinic-service
+        url: /clinic-service/v3/api-docs
+      - name: genai-service
+        url: /genai-service/v3/api-docs
+      - name: patient-service
+        url: /patient-service/v3/api-docs
+      - name: system-service
+        url: /system-service/v3/api-docs
+      - name: audit-service
+        url: /audit-service/v3/api-docs
+      - name: notification-service
+        url: /notification-service/v3/api-docs
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework: INFO
+    org.springframework.cloud.gateway: INFO
+    reactor.netty: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =============================================================================
+# Management & Actuator Configuration
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,refresh
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      access: read_only

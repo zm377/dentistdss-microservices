@@ -1,16 +1,16 @@
 package press.mizhifei.dentist.auth.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    private final JwtKeyProvider jwtKeyProvider;
 
     @Value("${jwt.expiration}")
     private long jwtExpirationInMs;
@@ -52,7 +52,7 @@ public class JwtTokenProvider {
                 .claim("roles", authorities)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey())  // No need to specify algorithm, inferred from key
+                .signWith(jwtKeyProvider.getPrivateKey())
                 .compact();
     }
 
@@ -62,9 +62,8 @@ public class JwtTokenProvider {
      * @return the user ID
      */
     public String getUserIdFromJWT(String token) {
-        // Updated to JJWT 0.12.6 style
         Jws<Claims> claimsJws = Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(jwtKeyProvider.getPublicKey())
                 .build()
                 .parseSignedClaims(token);
 
@@ -79,9 +78,8 @@ public class JwtTokenProvider {
      */
     public boolean validateToken(String authToken) {
         try {
-            // Updated to JJWT 0.12.6 style
             Jwts.parser()
-                    .verifyWith(getSigningKey())
+                    .verifyWith(jwtKeyProvider.getPublicKey())
                     .build()
                     .parseSignedClaims(authToken);
             return true;
@@ -106,7 +104,7 @@ public class JwtTokenProvider {
      */
     public String getEmailFromJWT(String token) {
         Jws<Claims> claimsJws = Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(jwtKeyProvider.getPublicKey())
                 .build()
                 .parseSignedClaims(token);
 
@@ -121,20 +119,11 @@ public class JwtTokenProvider {
      */
     public String getRolesFromJWT(String token) {
         Jws<Claims> claimsJws = Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(jwtKeyProvider.getPublicKey())
                 .build()
                 .parseSignedClaims(token);
 
         Claims claims = claimsJws.getPayload();
         return claims.get("roles", String.class);
-    }
-
-    /**
-     * Creates a signing key from the JWT secret
-     * @return the signing key
-     */
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

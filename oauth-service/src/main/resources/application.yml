@@ -10,7 +10,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/dentistdss
     username: dentistdss
-    password: dentistdss
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -24,8 +24,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:403805131990-v1ff8lgium6njmvdhj5bliogpjvmpsrv.apps.googleusercontent.com} # To be overridden by config server
-            client-secret: ${GOOGLE_CLIENT_SECRET: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} # To be overridden by config server
+            client-id: ${GOOGLE_CLIENT_ID} # To be overridden by config server
+            client-secret: ${GOOGLE_CLIENT_SECRET} # To be overridden by config server
             scope:
               - openid
               - profile
@@ -51,10 +51,19 @@ app:
     url: http://localhost:8081 # For local direct call, will be overridden by service discovery in cloud
   oauth2:
     authorizedRedirectUris:
-      - http://localhost:3000/oauth2/redirect # Default for local React app
       - https://dentist.mizhifei.press/oauth2/redirect
+      - http://localhost:3000/oauth2/redirect # Default for local React app
+
+# OpenAPI/SpringDoc Configuration - enabled for development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
 
 logging:
   level:
     press.mizhifei.dentist: DEBUG
-    org.springframework.security: DEBUG 
+    org.springframework.security: DEBUG

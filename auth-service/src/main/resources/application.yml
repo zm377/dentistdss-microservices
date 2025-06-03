@@ -43,17 +43,30 @@ eureka:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET}
   expiration: 86400000 # 24 hours in milliseconds
+  rsa:
+    private-key: ${JWT_RSA_PRIVATE_KEY:}
+    public-key: ${JWT_RSA_PUBLIC_KEY:}
+    key-id: ${JWT_RSA_KEY_ID:dentistdss}
+
+# OpenAPI/SpringDoc Configuration - enabled for development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
 
 logging:
   level:
     press.mizhifei.dentist: DEBUG
-    org.springframework: TRACE
+    org.springframework: DEBUG
+    root: DEBUG
 
 # App Configuration
 app:
   email-verification:
     token-expiry-minutes: 43200 # 30 days in minutes
     code-expiry-minutes: 10 # 10 minutes in minutes
-    base-url: ${BASE_URL:https://dentist.mizhifei.press}
+    base-url: ${BASE_URL:http://localhost:3000}

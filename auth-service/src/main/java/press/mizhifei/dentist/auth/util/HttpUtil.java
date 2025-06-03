@@ -3,6 +3,13 @@ package press.mizhifei.dentist.auth.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
+/**
+ *
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
+ */
 public class HttpUtil {
 
 

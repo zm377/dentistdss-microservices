@@ -495,6 +495,13 @@ public class AuthService {
         if (userOptionalByProviderId.isPresent()) {
             // User found by provider ID, this is a returning OAuth user
             user = userOptionalByProviderId.get();
+            // if the user is Clinic admin, Dentist, Receptionist, and not enabled, login failed
+            if ((user.getRoles().contains(Role.CLINIC_ADMIN)
+                    || user.getRoles().contains(Role.DENTIST)
+                    || user.getRoles().contains(Role.RECEPTIONIST))
+                    && !user.isEnabled()) {
+                return ApiResponse.error("Your account is not activated, please contact the administrator");
+            }
             // Optionally update first/last name if they changed in Google profile
             user.setFirstName(oAuthLoginRequest.getFirstName());
             user.setLastName(oAuthLoginRequest.getLastName());

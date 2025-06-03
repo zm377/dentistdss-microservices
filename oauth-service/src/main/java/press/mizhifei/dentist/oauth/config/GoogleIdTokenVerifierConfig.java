@@ -9,6 +9,13 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Collections;
 
+/**
+ *
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
+ */
 @Configuration
 public class GoogleIdTokenVerifierConfig {
 

@@ -8,14 +8,37 @@ services:
     environment:
       POSTGRES_DB: dentistdss
       POSTGRES_USER: dentistdss
-      POSTGRES_PASSWORD: dentistdss
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      - dentistdss-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dentistdss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional MongoDB (exposes 27017) – placeholder for future use
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=dentistdss
+      - MONGO_INITDB_ROOT_USERNAME=dentistdss
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - dentistdss-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.adminCommand(\"ping\")' --username dentistdss --password ${MONGO_INITDB_ROOT_PASSWORD} --authenticationDatabase admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,10 +51,15 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_PROFILES_ACTIVE=prod
       - LOGGING_LEVEL_ROOT=INFO
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - GIT_REPO=${GIT_REPO}
     ports:
       - "8888:8888"
+    networks:
+      - dentistdss-network
 
   discovery-server:
     image: dentistdss_discovery-server:latest
@@ -39,10 +67,14 @@ services:
     depends_on:
       - config-server
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
     ports:
       - "8761:8761"
+    networks:
+      - dentistdss-network
 
   api-gateway:
     image: dentistdss_api-gateway:latest
@@ -50,11 +82,16 @@ services:
     depends_on:
       - discovery-server
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
+      - CA_STOREPASS=${CA_STOREPASS}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
     ports:
       - "443:443"
+    networks:
+      - dentistdss-network
 
   auth-service:
     image: dentistdss_auth-service:latest
@@ -63,12 +100,26 @@ services:
       - api-gateway
       - postgres
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - JWT_RSA_PRIVATE_KEY=${JWT_RSA_PRIVATE_KEY}
+      - JWT_RSA_PUBLIC_KEY=${JWT_RSA_PUBLIC_KEY}
+      - JWT_RSA_KEY_ID=${JWT_RSA_KEY_ID}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - "8081:8081"
+    networks:
+      - dentistdss-network
 
   # OAuth Service
   oauth-service:
@@ -78,23 +129,162 @@ services:
       - api-gateway
       - postgres
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_CONFIG_IMPORT=optional:configserver:http://zhifeimi:CSIT998CAPSTONE2025dentistdss@config-server:8888
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
-      # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET will come from config-server for docker profile
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     ports:
       - "8082:8082"
+    networks:
+      - dentistdss-network
 
-  # Optional MongoDB (exposes 27017) – placeholder for future use
-  mongo:
-    image: mongo:7.0
+  clinic-service:
+    image: dentistdss_clinic-service:latest
     restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+      - "8083:8083"
+    networks:
+      - dentistdss-network
+      
+  admin-server:
+    image: dentistdss_admin-server:latest
+    restart: always
+    depends_on:
+      - api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+    ports:
+      - "9090:9090"
+    networks:
+      - dentistdss-network
+
+  # Notification Service (Added)
+  notification-service:
+    image: dentistdss_notification-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    ports:
+      - "8088:8088"
+    networks:
+      - dentistdss-network
+
+  genai-service:
+    image: dentistdss_genai-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "8084:8084"
+    networks:
+      - dentistdss-network
+
+  patient-service:
+    image: dentistdss_patient-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+    ports:
+      - "8085:8085"
+    networks:
+      - dentistdss-network
+
+  system-service:
+    image: dentistdss_system-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+    ports:
+      - "8086:8086"
+    networks:
+      - dentistdss-network
+
+  audit-service:
+    image: dentistdss_audit-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATA_MONGODB_URI=mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "8087:8087"
+    networks:
+      - dentistdss-network
 
 volumes:
   postgres_data:
-  mongo_data: 
+    driver: local
+  mongo_data:
+    driver: local
+
+# Added network definition
+networks:
+  dentistdss-network:
+    driver: bridge 

@@ -15,8 +15,8 @@ spring:
           searchLocations: file:///${GIT_REPO}
   security:
     user:
-      name: zhifeimi
-      password: CSIT998CAPSTONE2025dentistdss
+      name: ${SPRING_CONFIG_USER}
+      password: ${SPRING_CONFIG_PASS}
 
 # Common Actuator Configuration
 management:

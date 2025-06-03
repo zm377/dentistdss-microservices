@@ -37,17 +37,29 @@ eureka:
     serviceUrl:
       defaultZone: http://discovery-server:8761/eureka
   instance:
-    preferIpAddress: true
+    preferIpAddress: false
+
+# OpenAPI/SpringDoc Configuration - enabled for docker development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET}
   expiration: 86400000 # 24 hours in milliseconds
+  rsa:
+    private-key: ${JWT_RSA_PRIVATE_KEY:}
+    public-key: ${JWT_RSA_PUBLIC_KEY:}
+    key-id: ${JWT_RSA_KEY_ID:dentistdss}
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
-    org.springframework: TRACE
+    press.mizhifei.dentist: INFO
+    org.springframework: INFO
 
 # App Configuration
 app:

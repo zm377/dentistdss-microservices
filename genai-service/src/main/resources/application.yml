@@ -1,0 +1,54 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: genai-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      uri: http://localhost:8888 # Explicitly set for clarity with localhost
+      username: ${SPRING_CONFIG_USER}
+      password: ${SPRING_CONFIG_PASS}
+      fail-fast: false
+  data:
+    mongodb:
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4.1-nano-2025-04-14
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks # Default to localhost:8081 for auth-service
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+# OpenAPI/SpringDoc Configuration - enabled for development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2: TRACE
+    org.springframework.security.web: TRACE
+    org.springframework: DEBUG

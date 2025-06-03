@@ -9,6 +9,7 @@ import press.mizhifei.dentist.auth.annotation.RequireRoles;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.UserResponse;
 import press.mizhifei.dentist.auth.model.Role;
+import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.security.JwtTokenProvider;
 import press.mizhifei.dentist.auth.service.UserService;
 
@@ -78,6 +79,23 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserDetails(id));
     }
 
+    @GetMapping("/email/{email}/details")
+    public UserDetailsResponse getUserDetailsByEmail(@PathVariable String email) {
+        User user = userService.getUserByEmail(email);
+        return new UserDetailsResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPhone(),
+                user.getAddress(),
+                user.getRoles().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet()),
+                user.getClinicId(),
+                user.getClinicName(),
+                user.isEnabled()
+        );
+    }
+
     public static class UserDetailsResponse {
         public Long id;
         public String email;
@@ -86,6 +104,10 @@ public class UserController {
         public String fullName;
         public String phone;
         public String address;
+        public java.util.Set<String> roles;
+        public Long clinicId;
+        public String clinicName;
+        public Boolean enabled;
 
         public UserDetailsResponse(Long id, String email, String firstName, String lastName,
                 String phone, String address) {
@@ -96,6 +118,22 @@ public class UserController {
             this.fullName = firstName + " " + lastName;
             this.phone = phone;
             this.address = address;
+        }
+
+        public UserDetailsResponse(Long id, String email, String firstName, String lastName,
+                String phone, String address, java.util.Set<String> roles, Long clinicId,
+                String clinicName, Boolean enabled) {
+            this.id = id;
+            this.email = email;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.fullName = firstName + " " + lastName;
+            this.phone = phone;
+            this.address = address;
+            this.roles = roles;
+            this.clinicId = clinicId;
+            this.clinicName = clinicName;
+            this.enabled = enabled;
         }
     }
 }

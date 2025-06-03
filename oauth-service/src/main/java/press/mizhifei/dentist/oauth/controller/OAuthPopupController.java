@@ -17,6 +17,13 @@ import press.mizhifei.dentist.oauth.dto.AuthResponse;
 import press.mizhifei.dentist.oauth.dto.IdTokenRequest;
 import press.mizhifei.dentist.oauth.dto.OAuthLoginRequest;
 
+/**
+ *
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
+ */
 @Slf4j
 @RestController
 @RequestMapping("/oauth2")
@@ -27,39 +34,41 @@ public class OAuthPopupController {
     private final AuthServiceFeignClient authServiceFeignClient;
 
     @PostMapping("/token")
-    public ResponseEntity<ApiResponse<AuthResponse>> authenticateWithGoogleIdToken(@RequestBody IdTokenRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> authenticateWithGoogleIdToken(
+            @RequestBody IdTokenRequest request) {
         try {
             GoogleIdToken idToken = googleIdTokenVerifier.verify(request.getIdToken());
             if (idToken == null) {
-                log.warn("Invalid Google ID token received");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(false, null));
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid ID token"));
             }
 
-            Payload payload = idToken.getPayload();
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            if (payload == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Invalid token payload"));
+            }
+
             String email = payload.getEmail();
             String firstName = (String) payload.get("given_name");
             String lastName = (String) payload.get("family_name");
-            String providerId = payload.getSubject();
+            String googleId = payload.getSubject();
 
             OAuthLoginRequest oAuthLoginRequest = OAuthLoginRequest.builder()
                     .email(email)
                     .firstName(firstName)
                     .lastName(lastName)
                     .provider("GOOGLE")
-                    .providerId(providerId)
+                    .providerId(googleId)
                     .build();
 
-            AuthResponse authResponse = authServiceFeignClient.processOAuthLogin(oAuthLoginRequest)
-                    .getBody()
-                    .getDataObject();
-
-            return ResponseEntity.ok(new ApiResponse<>(true, authResponse));
-
+            ResponseEntity<ApiResponse<AuthResponse>> response = authServiceFeignClient.processOAuthLogin(oAuthLoginRequest);
+            AuthResponse authResponse = response.getBody().getDataObject();
+            return ResponseEntity.ok(ApiResponse.success(authResponse));
         } catch (Exception e) {
             log.error("Error verifying Google ID token", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, null));
+                    .body(ApiResponse.error("Authentication failed"));
         }
     }
-} 
+}

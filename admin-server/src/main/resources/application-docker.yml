@@ -1,0 +1,33 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: admin-server
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+
+  boot:
+    admin:
+      discovery:
+        enabled: true
+      ui:
+        title: DentistDSS Admin
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    preferIpAddress: false
+
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework: INFO
