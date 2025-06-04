@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,7 @@ import press.mizhifei.dentist.clinic.dto.ApiResponse;
 import press.mizhifei.dentist.clinic.dto.ClinicResponse;
 import press.mizhifei.dentist.clinic.dto.ClinicSearchRequest;
 import press.mizhifei.dentist.clinic.dto.ClinicCreateRequest;
+import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
 import press.mizhifei.dentist.clinic.dto.UserDetailsResponse;
 import press.mizhifei.dentist.clinic.model.Role;
@@ -70,10 +72,61 @@ public class ClinicController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    // update clinic info
+
     @PatchMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<ClinicResponse>> approveClinic(@PathVariable Long id) {
         ClinicResponse response = clinicService.approveClinic(id);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PutMapping("/{id}")
+    @RequireRoles({Role.CLINIC_ADMIN})
+    public ResponseEntity<ApiResponse<ClinicResponse>> updateClinic(
+            @PathVariable Long id,
+            @Valid @RequestBody ClinicUpdateRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            // Extract JWT token from request
+            String jwt = JwtUtil.getJwtFromRequest(httpRequest);
+            if (!StringUtils.hasText(jwt)) {
+                return ResponseEntity.status(401)
+                        .body(ApiResponse.error("Authentication token is required"));
+            }
+
+            // Extract user email and roles from JWT
+            String userEmail = jwtTokenProvider.getEmailFromJWT(jwt);
+            String rolesString = jwtTokenProvider.getRolesFromJWT(jwt);
+
+            log.debug("User {} with roles {} requesting to update clinic {}", userEmail, rolesString, id);
+
+            // Get user details to validate clinic access
+            UserDetailsResponse userDetails;
+            try {
+                userDetails = authServiceClient.getUserDetailsByEmail(userEmail);
+            } catch (Exception e) {
+                log.error("Failed to fetch user details for email {}: {}", userEmail, e.getMessage());
+                return ResponseEntity.status(500)
+                        .body(ApiResponse.error("Failed to validate user permissions"));
+            }
+
+            // Validate clinic access for CLINIC_ADMIN users
+            if (userDetails.clinicId != null && !userDetails.clinicId.equals(id)) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.error("Access denied. You can only update your own clinic."));
+            }
+
+            ClinicResponse response = clinicService.updateClinic(id, request);
+            return ResponseEntity.ok(ApiResponse.success(response));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404)
+                    .body(ApiResponse.error("Clinic not found"));
+        } catch (Exception e) {
+            log.error("Error updating clinic {}: {}", id, e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to update clinic"));
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ import press.mizhifei.dentist.clinic.client.PatientServiceClient;
 import press.mizhifei.dentist.clinic.dto.ClinicResponse;
 import press.mizhifei.dentist.clinic.dto.ClinicSearchRequest;
 import press.mizhifei.dentist.clinic.dto.ClinicCreateRequest;
+import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientResponse;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
 import press.mizhifei.dentist.clinic.model.Appointment;
@@ -98,6 +99,42 @@ public class ClinicService {
         clinic.setApproved(true);
         clinic.setEnabled(true);
         Clinic saved = clinicRepository.save(clinic);
+        return convertToDto(saved);
+    }
+
+    @Transactional
+    public ClinicResponse updateClinic(Long id, ClinicUpdateRequest request) {
+        Clinic clinic = clinicRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Clinic not found with id: " + id));
+
+        // Update only non-null fields
+        if (request.getName() != null) {
+            clinic.setName(request.getName());
+        }
+        if (request.getAddress() != null) {
+            clinic.setAddress(request.getAddress());
+        }
+        if (request.getCity() != null) {
+            clinic.setCity(request.getCity());
+        }
+        if (request.getState() != null) {
+            clinic.setState(request.getState());
+        }
+        if (request.getZipCode() != null) {
+            clinic.setZipCode(request.getZipCode());
+        }
+        if (request.getCountry() != null) {
+            clinic.setCountry(request.getCountry());
+        }
+        if (request.getPhoneNumber() != null) {
+            clinic.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getEmail() != null) {
+            clinic.setEmail(request.getEmail());
+        }
+
+        Clinic saved = clinicRepository.save(clinic);
+        log.info("Updated clinic {} with id {}", saved.getName(), id);
         return convertToDto(saved);
     }
 
