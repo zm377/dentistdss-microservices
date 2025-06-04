@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import press.mizhifei.dentist.clinic.client.AuthServiceClient;
 import press.mizhifei.dentist.clinic.client.PatientServiceClient;
 import press.mizhifei.dentist.clinic.dto.ClinicResponse;
 import press.mizhifei.dentist.clinic.dto.ClinicSearchRequest;
@@ -11,6 +12,7 @@ import press.mizhifei.dentist.clinic.dto.ClinicCreateRequest;
 import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientResponse;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
+import press.mizhifei.dentist.clinic.dto.UserResponse;
 import press.mizhifei.dentist.clinic.model.Appointment;
 import press.mizhifei.dentist.clinic.model.Clinic;
 import press.mizhifei.dentist.clinic.repository.AppointmentRepository;
@@ -40,6 +42,7 @@ public class ClinicService {
     private final ClinicRepository clinicRepository;
     private final AppointmentRepository appointmentRepository;
     private final PatientServiceClient patientServiceClient;
+    private final AuthServiceClient authServiceClient;
 
     @Transactional(readOnly = true)
     public List<ClinicResponse> listAllEnabledClinics() {
@@ -186,6 +189,28 @@ public class ClinicService {
 
         log.debug("Returning {} patients sorted by appointments for clinic {}", result.size(), clinicId);
         return result;
+    }
+
+    /**
+     * Get dentists for a clinic
+     * No role requirements - public endpoint
+     */
+    @Transactional(readOnly = true)
+    public List<UserResponse> getClinicDentists(Long clinicId) {
+        log.debug("Getting dentists for clinic {}", clinicId);
+
+        // Verify clinic exists
+        clinicRepository.findById(clinicId)
+                .orElseThrow(() -> new IllegalArgumentException("Clinic not found with id: " + clinicId));
+
+        try {
+            List<UserResponse> dentists = authServiceClient.getClinicDentists(clinicId);
+            log.debug("Found {} dentists for clinic {}", dentists.size(), clinicId);
+            return dentists;
+        } catch (Exception e) {
+            log.error("Failed to fetch dentists for clinic {}: {}", clinicId, e.getMessage());
+            throw new RuntimeException("Failed to fetch dentists for clinic", e);
+        }
     }
 
     private PatientWithAppointmentResponse buildPatientWithAppointmentResponse(

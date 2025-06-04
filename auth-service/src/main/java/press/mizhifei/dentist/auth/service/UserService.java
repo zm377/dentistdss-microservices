@@ -8,6 +8,7 @@ import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.UserResponse;
 import press.mizhifei.dentist.auth.dto.UserUpdateRequest;
 import press.mizhifei.dentist.auth.model.User;
+import press.mizhifei.dentist.auth.model.Role;
 import press.mizhifei.dentist.auth.repository.UserRepository;
 
 import java.util.List;
@@ -104,5 +105,12 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
         return ApiResponse.success(savedUser.toUserResponse());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponse> getClinicDentists(Long clinicId) {
+        return userRepository.findByClinicIdAndRoles(clinicId, Role.DENTIST).stream()
+                .map(User::toUserResponse)
+                .collect(Collectors.toList());
     }
 }

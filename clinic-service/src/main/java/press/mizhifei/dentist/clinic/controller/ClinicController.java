@@ -23,6 +23,7 @@ import press.mizhifei.dentist.clinic.dto.ClinicCreateRequest;
 import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
 import press.mizhifei.dentist.clinic.dto.UserDetailsResponse;
+import press.mizhifei.dentist.clinic.dto.UserResponse;
 import press.mizhifei.dentist.clinic.model.Role;
 import press.mizhifei.dentist.clinic.security.JwtTokenProvider;
 import press.mizhifei.dentist.clinic.service.ClinicService;
@@ -193,6 +194,25 @@ public class ClinicController {
 
         } catch (Exception e) {
             log.error("Error getting patients for clinic {}: {}", clinicId, e.getMessage(), e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Get dentists for a clinic
+     * No role required - public endpoint
+     */
+    @GetMapping("/{clinicId}/dentists")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getClinicDentists(@PathVariable Long clinicId) {
+        try {
+            List<UserResponse> dentists = clinicService.getClinicDentists(clinicId);
+            return ResponseEntity.ok(ApiResponse.success(dentists));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404)
+                    .body(ApiResponse.error("Clinic not found"));
+        } catch (Exception e) {
+            log.error("Error getting dentists for clinic {}: {}", clinicId, e.getMessage(), e);
             return ResponseEntity.status(500)
                     .body(ApiResponse.error("Internal server error"));
         }

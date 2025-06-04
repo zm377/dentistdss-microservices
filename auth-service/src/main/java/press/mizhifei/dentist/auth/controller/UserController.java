@@ -106,6 +106,11 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/clinic/{clinicId}/dentists")
+    public List<UserResponse> getClinicDentists(@PathVariable Long clinicId) {
+        return userService.getClinicDentists(clinicId);
+    }
+
     public static class UserDetailsResponse {
         public Long id;
         public String email;
