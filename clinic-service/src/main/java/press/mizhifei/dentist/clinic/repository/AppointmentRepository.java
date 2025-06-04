@@ -77,4 +77,85 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      */
     @Query("SELECT DISTINCT a.patientId FROM Appointment a WHERE a.clinicId = :clinicId")
     List<Long> findDistinctPatientIdsByClinicId(@Param("clinicId") Long clinicId);
+
+    /**
+     * Save appointment with proper casting for PostgreSQL enum types
+     */
+    @Query(nativeQuery = true, value = "INSERT INTO appointments " +
+            "(id, patient_id, dentist_id, clinic_id, service_id, appointment_date, start_time, end_time, " +
+            "status, reason_for_visit, symptoms, urgency, ai_triage_notes, notes, created_by, created_at, updated_at) " +
+            "VALUES (nextval('appointment_id_seq'), :patientId, :dentistId, :clinicId, :serviceId, :appointmentDate, :startTime, :endTime, " +
+            "CAST(:status AS appointment_status), :reasonForVisit, :symptoms, CAST(:urgency AS urgency_level), " +
+            ":aiTriageNotes, :notes, :createdBy, NOW(), NOW()) RETURNING *")
+    Appointment saveWithCasting(
+            @Param("patientId") Long patientId,
+            @Param("dentistId") Long dentistId,
+            @Param("clinicId") Long clinicId,
+            @Param("serviceId") Integer serviceId,
+            @Param("appointmentDate") LocalDate appointmentDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("status") String status,
+            @Param("reasonForVisit") String reasonForVisit,
+            @Param("symptoms") String symptoms,
+            @Param("urgency") String urgency,
+            @Param("aiTriageNotes") String aiTriageNotes,
+            @Param("notes") String notes,
+            @Param("createdBy") Long createdBy);
+
+    /**
+     * Update appointment status with proper casting for PostgreSQL enum types
+     */
+    @Query(nativeQuery = true, value = "UPDATE appointments SET " +
+            "status = CAST(:status AS appointment_status), " +
+            "confirmed_by = :confirmedBy, " +
+            "updated_at = NOW() " +
+            "WHERE id = :id RETURNING *")
+    Appointment updateStatusWithCasting(
+            @Param("id") Long id,
+            @Param("status") String status,
+            @Param("confirmedBy") Long confirmedBy);
+
+    /**
+     * Update appointment with cancellation details using proper casting
+     */
+    @Query(nativeQuery = true, value = "UPDATE appointments SET " +
+            "status = CAST(:status AS appointment_status), " +
+            "cancellation_reason = :cancellationReason, " +
+            "cancelled_by = :cancelledBy, " +
+            "updated_at = NOW() " +
+            "WHERE id = :id RETURNING *")
+    Appointment updateCancellationWithCasting(
+            @Param("id") Long id,
+            @Param("status") String status,
+            @Param("cancellationReason") String cancellationReason,
+            @Param("cancelledBy") Long cancelledBy);
+
+    /**
+     * Update appointment schedule with proper casting for PostgreSQL enum types
+     */
+    @Query(nativeQuery = true, value = "UPDATE appointments SET " +
+            "appointment_date = :appointmentDate, " +
+            "start_time = :startTime, " +
+            "end_time = :endTime, " +
+            "status = CAST(:status AS appointment_status), " +
+            "updated_at = NOW() " +
+            "WHERE id = :id RETURNING *")
+    Appointment updateScheduleWithCasting(
+            @Param("id") Long id,
+            @Param("appointmentDate") LocalDate appointmentDate,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("status") String status);
+
+    /**
+     * Update appointment status only with proper casting
+     */
+    @Query(nativeQuery = true, value = "UPDATE appointments SET " +
+            "status = CAST(:status AS appointment_status), " +
+            "updated_at = NOW() " +
+            "WHERE id = :id RETURNING *")
+    Appointment updateStatusOnlyWithCasting(
+            @Param("id") Long id,
+            @Param("status") String status);
 }

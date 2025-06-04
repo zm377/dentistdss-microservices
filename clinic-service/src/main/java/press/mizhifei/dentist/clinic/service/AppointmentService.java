@@ -51,24 +51,23 @@ public class AppointmentService {
             throw new IllegalStateException("Time slot conflicts with existing appointment");
         }
         
-        // Create appointment
-        Appointment appointment = Appointment.builder()
-                .patientId(request.getPatientId())
-                .dentistId(request.getDentistId())
-                .clinicId(request.getClinicId())
-                .serviceId(request.getServiceId())
-                .appointmentDate(request.getAppointmentDate())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .reasonForVisit(request.getReasonForVisit())
-                .symptoms(request.getSymptoms())
-                .urgency(parseUrgencyLevel(request.getUrgencyLevel()))
-                .notes(request.getNotes())
-                .status(AppointmentStatus.REQUESTED)
-                .createdBy(request.getCreatedBy())
-                .build();
-        
-        Appointment saved = appointmentRepository.save(appointment);
+        // Create appointment using saveWithCasting to handle PostgreSQL enum types
+        Appointment saved = appointmentRepository.saveWithCasting(
+                request.getPatientId(),
+                request.getDentistId(),
+                request.getClinicId(),
+                request.getServiceId(),
+                request.getAppointmentDate(),
+                request.getStartTime(),
+                request.getEndTime(),
+                AppointmentStatus.REQUESTED.name(),
+                request.getReasonForVisit(),
+                request.getSymptoms(),
+                parseUrgencyLevel(request.getUrgencyLevel()).name(),
+                null, // aiTriageNotes
+                request.getNotes(),
+                request.getCreatedBy()
+        );
         log.info("Created appointment {} for patient {} with dentist {}", 
                 saved.getId(), saved.getPatientId(), saved.getDentistId());
         
@@ -83,11 +82,12 @@ public class AppointmentService {
         if (appointment.getStatus() != AppointmentStatus.REQUESTED) {
             throw new IllegalStateException("Only requested appointments can be confirmed");
         }
-        
-        appointment.setStatus(AppointmentStatus.CONFIRMED);
-        appointment.setConfirmedBy(confirmedBy);
-        
-        Appointment saved = appointmentRepository.save(appointment);
+
+        Appointment saved = appointmentRepository.updateStatusWithCasting(
+                appointmentId,
+                AppointmentStatus.CONFIRMED.name(),
+                confirmedBy
+        );
         log.info("Confirmed appointment {} by user {}", appointmentId, confirmedBy);
         
         // Send confirmation notification
@@ -108,12 +108,13 @@ public class AppointmentService {
         if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
             throw new IllegalStateException("Appointment is already cancelled");
         }
-        
-        appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(reason);
-        appointment.setCancelledBy(cancelledBy);
-        
-        Appointment saved = appointmentRepository.save(appointment);
+
+        Appointment saved = appointmentRepository.updateCancellationWithCasting(
+                appointmentId,
+                AppointmentStatus.CANCELLED.name(),
+                reason,
+                cancelledBy
+        );
         log.info("Cancelled appointment {} by user {} with reason: {}", 
                 appointmentId, cancelledBy, reason);
         
@@ -161,12 +162,13 @@ public class AppointmentService {
             throw new IllegalStateException("New time slot conflicts with existing appointment");
         }
         
-        appointment.setAppointmentDate(newDate);
-        appointment.setStartTime(newStartTime);
-        appointment.setEndTime(newEndTime);
-        appointment.setStatus(AppointmentStatus.RESCHEDULED);
-        
-        Appointment saved = appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.updateScheduleWithCasting(
+                appointmentId,
+                newDate,
+                newStartTime,
+                newEndTime,
+                AppointmentStatus.RESCHEDULED.name()
+        );
         log.info("Rescheduled appointment {} to {} at {} by user {}", 
                 appointmentId, newDate, newStartTime, rescheduledBy);
         
@@ -252,9 +254,11 @@ public class AppointmentService {
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
             throw new IllegalStateException("Only confirmed appointments can be completed");
         }
-        
-        appointment.setStatus(AppointmentStatus.COMPLETED);
-        Appointment saved = appointmentRepository.save(appointment);
+
+        Appointment saved = appointmentRepository.updateStatusOnlyWithCasting(
+                appointmentId,
+                AppointmentStatus.COMPLETED.name()
+        );
         
         return toResponse(saved);
     }
@@ -264,8 +268,10 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
         
-        appointment.setStatus(AppointmentStatus.NO_SHOW);
-        Appointment saved = appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.updateStatusOnlyWithCasting(
+                appointmentId,
+                AppointmentStatus.NO_SHOW.name()
+        );
         
         return toResponse(saved);
     }
