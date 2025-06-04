@@ -63,7 +63,7 @@ public class ClinicalNoteController {
         return ResponseEntity.ok(ApiResponse.success(notes));
     }
 
-    @GetMapping("/{clinicId}")
+    @GetMapping("/clinic/{clinicId}")
     public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getClinicClinicalNotes(
             @PathVariable Long clinicId) {
         List<ClinicalNoteResponse> notes = clinicalNoteService.getClinicClinicalNotes(clinicId);

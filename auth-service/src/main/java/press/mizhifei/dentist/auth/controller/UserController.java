@@ -1,6 +1,7 @@
 package press.mizhifei.dentist.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import press.mizhifei.dentist.auth.annotation.RequireRoles;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.UserResponse;
+import press.mizhifei.dentist.auth.dto.UserUpdateRequest;
 import press.mizhifei.dentist.auth.model.Role;
 import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.security.JwtTokenProvider;
@@ -94,6 +96,14 @@ public class UserController {
                 user.getClinicName(),
                 user.isEnabled()
         );
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUserProfile(
+            @PathVariable Long userId,
+            @Valid @RequestBody UserUpdateRequest updateRequest) {
+        ApiResponse<UserResponse> response = userService.updateUserProfile(userId, updateRequest);
+        return ResponseEntity.ok(response);
     }
 
     public static class UserDetailsResponse {

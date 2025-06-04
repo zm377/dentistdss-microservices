@@ -53,13 +53,6 @@ eureka:
   instance:
     preferIpAddress: false
 
-# OpenAPI/SpringDoc Configuration - DISABLED for production
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
-
 logging:
   level:
     press.mizhifei.dentist: INFO
