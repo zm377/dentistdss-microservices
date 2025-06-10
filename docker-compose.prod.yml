@@ -201,8 +201,8 @@ services:
     networks:
       - dentistdss-network
 
-  patient-service:
-    image: dentistdss_patient-service:latest
+  user-profile-service:
+    image: dentistdss_user-profile-service:latest
     restart: always
     depends_on:
       - api-gateway

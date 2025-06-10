@@ -39,7 +39,7 @@
 		<module>clinic-service</module>
 		<module>admin-server</module>
 		<module>genai-service</module>
-		<module>patient-service</module>
+		<module>user-profile-service</module>
 		<module>system-service</module>
 		<module>audit-service</module>
 		<module>notification-service</module>

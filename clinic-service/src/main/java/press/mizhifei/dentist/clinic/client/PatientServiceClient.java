@@ -8,14 +8,14 @@ import press.mizhifei.dentist.clinic.dto.PatientResponse;
 import java.util.List;
 
 /**
- * Feign client for patient-service
+ * Feign client for user-profile-service (patient endpoints)
  *
  * @author zhifeimi
  * @email zm377@uowmail.edu.au
  * @github https://github.com/zm377
  *
  */
-@FeignClient(name = "patient-service", path = "/patient")
+@FeignClient(name = "user-profile-service", path = "/patient")
 public interface PatientServiceClient {
     
     @GetMapping("/list/all")

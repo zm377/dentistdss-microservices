@@ -87,11 +87,27 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # Patient Management Service
-            - id: patient-service
-              uri: lb://patient-service
+            # User Profile Service (Patient and User Management)
+            - id: user-profile-service-patient
+              uri: lb://user-profile-service
               predicates:
                 - Path=/api/patient/**
+              filters:
+                - StripPrefix=1
+
+            # User Profile Service (User Management)
+            - id: user-profile-service-user
+              uri: lb://user-profile-service
+              predicates:
+                - Path=/api/user/**
+              filters:
+                - StripPrefix=1
+
+            # User Profile Service (Dentist Management)
+            - id: user-profile-service-dentist
+              uri: lb://user-profile-service
+              predicates:
+                - Path=/api/dentist/**
               filters:
                 - StripPrefix=1
 

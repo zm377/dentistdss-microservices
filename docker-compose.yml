@@ -227,11 +227,11 @@ services:
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
-  # Patient Service
-  patient-service:
+  # User Profile Service
+  user-profile-service:
     build:
-      context: ./patient-service
-    container_name: patient-service
+      context: ./user-profile-service
+    container_name: user-profile-service
     restart: always
     ports:
       - "8085:8085"
