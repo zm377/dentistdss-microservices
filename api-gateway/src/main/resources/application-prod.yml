@@ -202,13 +202,4 @@ management:
     health:
       show-details: when-authorized  # Restricted health details
     gateway:
-      access: none # Disable gateway actuator in production
-
-# =============================================================================
-# OpenAPI/SpringDoc Configuration - DISABLED for production
-# =============================================================================
-springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
+      access: none

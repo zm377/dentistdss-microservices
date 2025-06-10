@@ -144,19 +144,11 @@ spring:
             # OpenAPI Documentation Routes (Docker Development)
             # =============================================================================
 
-            # Authentication Service Documentation
+            # Authentication Service Documentation (includes OAuth functionality)
             - id: auth-service-openapi
               uri: lb://auth-service
               predicates:
                 - Path=/auth-service/v3/api-docs
-              filters:
-                - StripPrefix=1
-
-            # OAuth Service Documentation
-            - id: oauth-service-openapi
-              uri: lb://oauth-service
-              predicates:
-                - Path=/oauth-service/v3/api-docs
               filters:
                 - StripPrefix=1
 
@@ -226,31 +218,11 @@ eureka:
     securePort: 443
 
 # =============================================================================
-# OpenAPI/SpringDoc Configuration - enabled for docker
-# =============================================================================
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-
-# =============================================================================
-# Server Configuration
-# =============================================================================
-# Configure reactor netty server to use virtual threads if running on Java 21+
-reactor:
-  netty:
-    http:
-      server:
-        accessLogEnabled: true
-
-# =============================================================================
 # OpenAPI/SpringDoc Configuration - Docker Development Profile
 # =============================================================================
 springdoc:
   api-docs:
+    path: /v3/api-docs
     enabled: true
     groups:
       enabled: true
@@ -261,10 +233,8 @@ springdoc:
     urls:
       - name: api-gateway
         url: /v3/api-docs
-      - name: auth-service
+      - name: auth-service (includes OAuth)
         url: /auth-service/v3/api-docs
-      - name: oauth-service
-        url: /oauth-service/v3/api-docs
       - name: clinic-service
         url: /clinic-service/v3/api-docs
       - name: genai-service
@@ -277,6 +247,16 @@ springdoc:
         url: /audit-service/v3/api-docs
       - name: notification-service
         url: /notification-service/v3/api-docs
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+# Configure reactor netty server to use virtual threads if running on Java 21+
+reactor:
+  netty:
+    http:
+      server:
+        accessLogEnabled: true
 
 # =============================================================================
 # Logging Configuration
@@ -303,4 +283,4 @@ management:
     health:
       show-details: always
     gateway:
-      access: read_only
+      access: READ_ONLY
