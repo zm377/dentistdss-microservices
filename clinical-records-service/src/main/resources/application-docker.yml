@@ -38,7 +38,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss_files?authSource=admin}
-      database: dentistdss_files
+      database: dentistdss
 
 # =============================================================================
 # Service Discovery Configuration
