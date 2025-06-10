@@ -81,6 +81,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Appointment Service
+            - id: appointment-service
+              uri: lb://appointment-service
+              predicates:
+                - Path=/api/appointment/**
+              filters:
+                - StripPrefix=1
+
             # User Profile Service (Patient and User Management)
             - id: user-profile-service-patient
               uri: lb://user-profile-service
@@ -169,6 +177,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Appointment Service Documentation
+            - id: appointment-service-openapi
+              uri: lb://appointment-service
+              predicates:
+                - Path=/appointment-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
             # User Profile Service Documentation
             - id: user-profile-service-openapi
               uri: lb://user-profile-service
@@ -243,6 +259,8 @@ springdoc:
         url: /auth-service/v3/api-docs
       - name: clinic-service
         url: /clinic-service/v3/api-docs
+      - name: appointment-service
+        url: /appointment-service/v3/api-docs
       - name: genai-service
         url: /genai-service/v3/api-docs
       - name: user-profile-service

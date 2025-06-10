@@ -8,7 +8,7 @@ import press.mizhifei.dentist.clinic.client.AuthServiceClient;
 import press.mizhifei.dentist.clinic.dto.ClinicalNoteRequest;
 import press.mizhifei.dentist.clinic.dto.ClinicalNoteResponse;
 import press.mizhifei.dentist.clinic.model.ClinicalNote;
-import press.mizhifei.dentist.clinic.repository.AppointmentRepository;
+
 import press.mizhifei.dentist.clinic.repository.ClinicRepository;
 import press.mizhifei.dentist.clinic.repository.ClinicalNoteRepository;
 
@@ -29,17 +29,13 @@ import java.util.stream.Collectors;
 public class ClinicalNoteService {
     
     private final ClinicalNoteRepository clinicalNoteRepository;
-    private final AppointmentRepository appointmentRepository;
     private final ClinicRepository clinicRepository;
     private final AuthServiceClient authServiceClient;
     
     @Transactional
     public ClinicalNoteResponse createClinicalNote(ClinicalNoteRequest request) {
-        // Validate appointment exists if provided
-        if (request.getAppointmentId() != null) {
-            appointmentRepository.findById(request.getAppointmentId())
-                    .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
-        }
+        // Note: Appointment validation is now handled by the appointment service
+        // Clinical notes can be created independently of appointments
         
         ClinicalNote clinicalNote = ClinicalNote.builder()
                 .appointmentId(request.getAppointmentId())

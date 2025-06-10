@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Config
 REGISTRY_REPO="zm377/dentistdss-microservices"
-SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service appointment-service user-profile-service admin-server notification-service)
 PROJECT_NAME="dentistdss"
 COMPOSE_FILE="docker-compose.prod.yml"
 
@@ -32,7 +32,7 @@ if [[ "$SERVICE_NAME" == "--help" || "$SERVICE_NAME" == "-h" ]]; then
   echo ""
   echo "Examples:"
   echo "  $0 auth-service"
-  echo "  $0 patient-service v1.2.3"
+  echo "  $0 user-profile-service v1.2.3"
   exit 0
 fi
 

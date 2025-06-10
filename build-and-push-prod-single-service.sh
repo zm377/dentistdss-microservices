@@ -4,7 +4,7 @@
 # Usage: ./build-and-push-prod-single-service.sh <service-name> [version] [profile] [options]
 # 
 # Parameters:
-#   service-name: Required - Name of the service to build (e.g., auth-service, patient-service)
+#   service-name: Required - Name of the service to build (e.g., auth-service, user-profile-service)
 #   version: Optional - Image version tag (default: "latest")
 #   profile: Optional - Maven profile: "dev", "docker", or "prod" (default: "prod")
 #
@@ -16,7 +16,7 @@
 #
 # Examples:
 #   ./build-and-push-prod-single-service.sh auth-service
-#   ./build-and-push-prod-single-service.sh patient-service v1.2.3
+#   ./build-and-push-prod-single-service.sh user-profile-service v1.2.3
 #   ./build-and-push-prod-single-service.sh genai-service latest docker
 #   ./build-and-push-prod-single-service.sh clinic-service v2.0.0 prod --sequential
 
@@ -28,7 +28,7 @@ PLATFORM="linux/amd64"
 BUILDX_BUILDER="dentist-multiarch"
 
 # All available services
-ALL_SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+ALL_SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service appointment-service user-profile-service admin-server notification-service)
 
 # Default values
 SERVICE_NAME=""
@@ -68,7 +68,7 @@ show_help() {
   echo ""
   echo -e "${YELLOW}EXAMPLES:${NC}"
   echo "  $0 auth-service"
-  echo "  $0 patient-service v1.2.3"
+  echo "  $0 user-profile-service v1.2.3"
   echo "  $0 genai-service latest docker"
   echo "  $0 clinic-service v2.0.0 prod --sequential"
   echo ""

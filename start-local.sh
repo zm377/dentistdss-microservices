@@ -16,7 +16,8 @@ SERVICES=(
   "system-service"
   "genai-service"
   "clinic-service"
-  "patient-service"
+  "appointment-service"
+  "user-profile-service"
   "admin-server"
   "notification-service"
 )
@@ -31,7 +32,8 @@ LOGS=(
   "logs/system-service.log"
   "logs/genai-service.log"
   "logs/clinic-service.log"
-  "logs/patient-service.log"
+  "logs/appointment-service.log"
+  "logs/user-profile-service.log"
   "logs/admin-server.log"
   "logs/notification-service.log"
 )

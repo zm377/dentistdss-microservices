@@ -16,8 +16,10 @@ SERVICES=(
   "system-service"
   "genai-service"
   "clinic-service"
-  "patient-service"
+  "appointment-service"
+  "user-profile-service"
   "admin-server"
+  "notification-service"
 )
 
 printf "${YELLOW}Stopping all local Java services...${NC}\n"

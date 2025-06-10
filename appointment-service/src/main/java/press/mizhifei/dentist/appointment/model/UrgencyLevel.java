@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.appointment.model;
 
 /**
  *
@@ -12,4 +12,4 @@ public enum UrgencyLevel {
     MODERATE,
     URGENT,
     EMERGENCY
-} 
+}

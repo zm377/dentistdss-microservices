@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import press.mizhifei.dentist.clinic.client.AppointmentServiceClient;
 import press.mizhifei.dentist.clinic.client.AuthServiceClient;
 import press.mizhifei.dentist.clinic.client.PatientServiceClient;
 import press.mizhifei.dentist.clinic.dto.ClinicResponse;
@@ -13,9 +14,7 @@ import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientResponse;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
 import press.mizhifei.dentist.clinic.dto.UserResponse;
-import press.mizhifei.dentist.clinic.model.Appointment;
 import press.mizhifei.dentist.clinic.model.Clinic;
-import press.mizhifei.dentist.clinic.repository.AppointmentRepository;
 import press.mizhifei.dentist.clinic.repository.ClinicRepository;
 import org.springframework.util.StringUtils;
 
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
 public class ClinicService {
 
     private final ClinicRepository clinicRepository;
-    private final AppointmentRepository appointmentRepository;
+    private final AppointmentServiceClient appointmentServiceClient;
     private final PatientServiceClient patientServiceClient;
     private final AuthServiceClient authServiceClient;
 
@@ -154,8 +153,21 @@ public class ClinicService {
         clinicRepository.findById(clinicId)
                 .orElseThrow(() -> new IllegalArgumentException("Clinic not found with id: " + clinicId));
 
-        // Get all patients who have appointments in this clinic
-        List<Long> patientIds = appointmentRepository.findDistinctPatientIdsByClinicId(clinicId);
+        // Get all patients who have appointments in this clinic from appointment service
+        List<Long> patientIds;
+        try {
+            var response = appointmentServiceClient.getClinicPatientIds(clinicId);
+            if (response.isSuccess() && response.getDataObject() != null) {
+                patientIds = response.getDataObject();
+            } else {
+                log.warn("Failed to get patient IDs from appointment service for clinic {}: {}",
+                        clinicId, response.getMessage());
+                patientIds = new ArrayList<>();
+            }
+        } catch (Exception e) {
+            log.error("Error calling appointment service for clinic {}: {}", clinicId, e.getMessage());
+            patientIds = new ArrayList<>();
+        }
         log.debug("Found {} patients with appointments in clinic {}", patientIds.size(), clinicId);
 
         if (patientIds.isEmpty()) {
@@ -216,21 +228,33 @@ public class ClinicService {
     private PatientWithAppointmentResponse buildPatientWithAppointmentResponse(
             PatientResponse patient, Long clinicId, LocalDate currentDate, LocalTime currentTime) {
 
-        // Get last completed appointment
+        // Get last completed appointment from appointment service
         LocalDate lastVisit = null;
-        List<Appointment> lastAppointments = appointmentRepository
-                .findLastCompletedAppointmentByPatientAndClinic(patient.getId(), clinicId, currentDate);
-        if (!lastAppointments.isEmpty()) {
-            lastVisit = lastAppointments.get(0).getAppointmentDate();
+        try {
+            var lastResponse = appointmentServiceClient.getLastCompletedAppointment(
+                    patient.getId(), clinicId, currentDate);
+            if (lastResponse.isSuccess() && lastResponse.getDataObject() != null &&
+                !lastResponse.getDataObject().isEmpty()) {
+                lastVisit = lastResponse.getDataObject().get(0).getAppointmentDate();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get last appointment for patient {} in clinic {}: {}",
+                    patient.getId(), clinicId, e.getMessage());
         }
 
-        // Get next upcoming appointment
+        // Get next upcoming appointment from appointment service
         LocalDateTime nextAppointment = null;
-        List<Appointment> upcomingAppointments = appointmentRepository
-                .findNextUpcomingAppointmentByPatientAndClinic(patient.getId(), clinicId, currentDate, currentTime);
-        if (!upcomingAppointments.isEmpty()) {
-            Appointment next = upcomingAppointments.get(0);
-            nextAppointment = LocalDateTime.of(next.getAppointmentDate(), next.getStartTime());
+        try {
+            var upcomingResponse = appointmentServiceClient.getNextUpcomingAppointment(
+                    patient.getId(), clinicId, currentDate, currentTime);
+            if (upcomingResponse.isSuccess() && upcomingResponse.getDataObject() != null &&
+                !upcomingResponse.getDataObject().isEmpty()) {
+                var next = upcomingResponse.getDataObject().get(0);
+                nextAppointment = LocalDateTime.of(next.getAppointmentDate(), next.getStartTime());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get upcoming appointment for patient {} in clinic {}: {}",
+                    patient.getId(), clinicId, e.getMessage());
         }
 
         return PatientWithAppointmentResponse.builder()

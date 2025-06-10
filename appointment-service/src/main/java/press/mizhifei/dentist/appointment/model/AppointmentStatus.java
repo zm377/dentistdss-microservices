@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.appointment.model;
 
 /**
  *
@@ -14,4 +14,4 @@ public enum AppointmentStatus {
     COMPLETED,
     NO_SHOW,
     RESCHEDULED
-} 
+}

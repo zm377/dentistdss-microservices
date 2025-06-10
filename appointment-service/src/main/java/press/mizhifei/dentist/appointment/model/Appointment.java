@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.appointment.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -103,4 +103,4 @@ public class Appointment {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-} 
+}

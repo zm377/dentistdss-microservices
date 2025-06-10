@@ -1,10 +1,10 @@
-package press.mizhifei.dentist.clinic.repository;
+package press.mizhifei.dentist.appointment.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import press.mizhifei.dentist.clinic.model.DentistAvailability;
+import press.mizhifei.dentist.appointment.model.DentistAvailability;
 
 import java.time.LocalDate;
 import java.util.List;

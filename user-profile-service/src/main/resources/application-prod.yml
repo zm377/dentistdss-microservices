@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: patient-service
+    name: user-profile-service
   config:
     import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
 

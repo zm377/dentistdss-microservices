@@ -95,7 +95,7 @@ COMPOSE_BUILD_ARGS=""
 POSTGRES_RUNNING=$(docker ps -q -f name=postgres)
 MONGO_RUNNING=$(docker ps -q -f name=mongo)
 
-SERVICES="config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service"
+SERVICES="config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service appointment-service user-profile-service admin-server notification-service"
 
 if [[ -n "$POSTGRES_RUNNING" || -n "$MONGO_RUNNING" ]]; then
     echo -e "${GREEN}Preserving running databases${NC}"

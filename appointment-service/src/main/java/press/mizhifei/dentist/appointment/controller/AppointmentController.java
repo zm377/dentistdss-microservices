@@ -1,12 +1,12 @@
-package press.mizhifei.dentist.clinic.controller;
+package press.mizhifei.dentist.appointment.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import press.mizhifei.dentist.clinic.dto.*;
-import press.mizhifei.dentist.clinic.service.AppointmentService;
+import press.mizhifei.dentist.appointment.dto.*;
+import press.mizhifei.dentist.appointment.service.AppointmentService;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -20,7 +20,7 @@ import java.util.List;
  *
  */
 @RestController
-@RequestMapping("/clinic/appointment")
+@RequestMapping("/appointment")
 @RequiredArgsConstructor
 public class AppointmentController {
     
@@ -29,7 +29,6 @@ public class AppointmentController {
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody AppointmentRequest request) {
-        // TODO: Get userId from the twt token subject field
         AppointmentResponse response = appointmentService.createAppointment(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -107,4 +106,32 @@ public class AppointmentController {
                 dentistId, clinicId, date, serviceDurationMinutes);
         return ResponseEntity.ok(ApiResponse.success(slots));
     }
-} 
+    
+    // Additional endpoints for inter-service communication
+    @GetMapping("/patient/{patientId}/clinic/{clinicId}/last-completed")
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getLastCompletedAppointment(
+            @PathVariable Long patientId,
+            @PathVariable Long clinicId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate currentDate) {
+        List<AppointmentResponse> appointments = appointmentService.getLastCompletedAppointmentByPatientAndClinic(
+                patientId, clinicId, currentDate);
+        return ResponseEntity.ok(ApiResponse.success(appointments));
+    }
+    
+    @GetMapping("/patient/{patientId}/clinic/{clinicId}/next-upcoming")
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getNextUpcomingAppointment(
+            @PathVariable Long patientId,
+            @PathVariable Long clinicId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate currentDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime currentTime) {
+        List<AppointmentResponse> appointments = appointmentService.getNextUpcomingAppointmentByPatientAndClinic(
+                patientId, clinicId, currentDate, currentTime);
+        return ResponseEntity.ok(ApiResponse.success(appointments));
+    }
+    
+    @GetMapping("/clinic/{clinicId}/patients")
+    public ResponseEntity<ApiResponse<List<Long>>> getClinicPatientIds(@PathVariable Long clinicId) {
+        List<Long> patientIds = appointmentService.getDistinctPatientIdsByClinicId(clinicId);
+        return ResponseEntity.ok(ApiResponse.success(patientIds));
+    }
+}

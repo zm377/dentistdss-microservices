@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.appointment.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -64,4 +64,4 @@ public class DentistAvailability {
             createdAt = LocalDateTime.now();
         }
     }
-} 
+}

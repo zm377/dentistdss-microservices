@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.appointment.dto;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
@@ -58,4 +58,4 @@ public class AppointmentRequest {
     
     @Size(max = 1000, message = "Notes must not exceed 1000 characters")
     private String notes;
-} 
+}

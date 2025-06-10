@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.appointment.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,4 +45,4 @@ public class AppointmentResponse {
     private String cancellationReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-} 
+}

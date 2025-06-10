@@ -1,14 +1,15 @@
-package press.mizhifei.dentist.clinic.service;
+package press.mizhifei.dentist.appointment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import press.mizhifei.dentist.clinic.client.AuthServiceClient;
-import press.mizhifei.dentist.clinic.client.NotificationClient;
-import press.mizhifei.dentist.clinic.dto.*;
-import press.mizhifei.dentist.clinic.model.*;
-import press.mizhifei.dentist.clinic.repository.*;
+import press.mizhifei.dentist.appointment.client.AuthServiceClient;
+import press.mizhifei.dentist.appointment.client.ClinicServiceClient;
+import press.mizhifei.dentist.appointment.client.NotificationClient;
+import press.mizhifei.dentist.appointment.dto.*;
+import press.mizhifei.dentist.appointment.model.*;
+import press.mizhifei.dentist.appointment.repository.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -31,11 +32,10 @@ import java.util.stream.Collectors;
 public class AppointmentService {
     
     private final AppointmentRepository appointmentRepository;
-    private final ServiceRepository serviceRepository;
     private final DentistAvailabilityRepository availabilityRepository;
-    private final ClinicRepository clinicRepository;
     private final NotificationClient notificationClient;
     private final AuthServiceClient authServiceClient;
+    private final ClinicServiceClient clinicServiceClient;
     
     @Transactional
     public AppointmentResponse createAppointment(AppointmentRequest request) {
@@ -196,38 +196,58 @@ public class AppointmentService {
         return appointments.stream().map(this::toResponse).collect(Collectors.toList());
     }
     
+    // Additional methods for inter-service communication
     @Transactional(readOnly = true)
-    public List<AvailableSlotResponse> getAvailableSlots(Long dentistId, 
-                                                          Long clinicId, 
+    public List<AppointmentResponse> getLastCompletedAppointmentByPatientAndClinic(Long patientId, Long clinicId, LocalDate currentDate) {
+        List<Appointment> appointments = appointmentRepository
+                .findLastCompletedAppointmentByPatientAndClinic(patientId, clinicId, currentDate);
+        return appointments.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> getNextUpcomingAppointmentByPatientAndClinic(Long patientId, Long clinicId, LocalDate currentDate, LocalTime currentTime) {
+        List<Appointment> appointments = appointmentRepository
+                .findNextUpcomingAppointmentByPatientAndClinic(patientId, clinicId, currentDate, currentTime);
+        return appointments.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<Long> getDistinctPatientIdsByClinicId(Long clinicId) {
+        return appointmentRepository.findDistinctPatientIdsByClinicId(clinicId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvailableSlotResponse> getAvailableSlots(Long dentistId,
+                                                          Long clinicId,
                                                           LocalDate date,
                                                           Integer serviceDurationMinutes) {
         // Get dentist's availability for the date
         List<DentistAvailability> availabilities = availabilityRepository
                 .findAvailableSlots(dentistId, clinicId, date);
-        
+
         // Get existing appointments for the dentist on that date
         List<Appointment> existingAppointments = appointmentRepository
                 .findByDentistIdAndAppointmentDateOrderByStartTime(dentistId, date);
-        
+
         List<AvailableSlotResponse> availableSlots = new ArrayList<>();
-        
+
         for (DentistAvailability availability : availabilities) {
             LocalTime currentTime = availability.getStartTime();
             LocalTime endTime = availability.getEndTime();
-            
+
             while (currentTime.plusMinutes(serviceDurationMinutes).isBefore(endTime) ||
                    currentTime.plusMinutes(serviceDurationMinutes).equals(endTime)) {
-                
+
                 LocalTime slotStartTime = currentTime;
                 LocalTime slotEndTime = currentTime.plusMinutes(serviceDurationMinutes);
-                
+
                 // Check if this slot conflicts with any existing appointment
                 boolean isAvailable = existingAppointments.stream()
                         .noneMatch(apt -> doesTimeOverlap(
                                 slotStartTime, slotEndTime,
                                 apt.getStartTime(), apt.getEndTime()
                         ));
-                
+
                 if (isAvailable) {
                     availableSlots.add(AvailableSlotResponse.builder()
                             .date(date)
@@ -238,19 +258,19 @@ public class AppointmentService {
                             .available(true)
                             .build());
                 }
-                
+
                 currentTime = currentTime.plusMinutes(15); // 15-minute increments
             }
         }
-        
+
         return availableSlots;
     }
-    
+
     @Transactional
     public AppointmentResponse completeAppointment(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
-        
+
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
             throw new IllegalStateException("Only confirmed appointments can be completed");
         }
@@ -259,23 +279,23 @@ public class AppointmentService {
                 appointmentId,
                 AppointmentStatus.COMPLETED.name()
         );
-        
+
         return toResponse(saved);
     }
-    
+
     @Transactional
     public AppointmentResponse markNoShow(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
-        
+
         Appointment saved = appointmentRepository.updateStatusOnlyWithCasting(
                 appointmentId,
                 AppointmentStatus.NO_SHOW.name()
         );
-        
+
         return toResponse(saved);
     }
-    
+
     private AppointmentResponse toResponse(Appointment appointment) {
         AppointmentResponse response = AppointmentResponse.builder()
                 .id(appointment.getId())
@@ -299,7 +319,7 @@ public class AppointmentService {
                 .createdAt(appointment.getCreatedAt())
                 .updatedAt(appointment.getUpdatedAt())
                 .build();
-        
+
         // Fetch names from user service
         try {
             response.setPatientName(authServiceClient.getUserFullName(appointment.getPatientId()));
@@ -307,31 +327,43 @@ public class AppointmentService {
             log.warn("Failed to fetch patient name for id {}: {}", appointment.getPatientId(), e.getMessage());
             response.setPatientName("Patient " + appointment.getPatientId());
         }
-        
+
         try {
             response.setDentistName(authServiceClient.getUserFullName(appointment.getDentistId()));
         } catch (Exception e) {
             log.warn("Failed to fetch dentist name for id {}: {}", appointment.getDentistId(), e.getMessage());
             response.setDentistName("Dr. Dentist " + appointment.getDentistId());
         }
-        
+
         // Fetch clinic name
         if (appointment.getClinicId() != null) {
-            clinicRepository.findById(appointment.getClinicId()).ifPresent(clinic -> 
-                response.setClinicName(clinic.getName())
-            );
+            try {
+                var clinicResponse = clinicServiceClient.getClinic(appointment.getClinicId());
+                if (clinicResponse.isSuccess() && clinicResponse.getDataObject() != null) {
+                    response.setClinicName(clinicResponse.getDataObject().getName());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch clinic name for id {}: {}", appointment.getClinicId(), e.getMessage());
+                response.setClinicName("Clinic " + appointment.getClinicId());
+            }
         }
-        
+
         // Fetch service name
         if (appointment.getServiceId() != null) {
-            serviceRepository.findById(appointment.getServiceId()).ifPresent(service -> 
-                response.setServiceName(service.getName())
-            );
+            try {
+                var serviceResponse = clinicServiceClient.getService(appointment.getServiceId());
+                if (serviceResponse.isSuccess() && serviceResponse.getDataObject() != null) {
+                    response.setServiceName(serviceResponse.getDataObject().getName());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch service name for id {}: {}", appointment.getServiceId(), e.getMessage());
+                response.setServiceName("Service " + appointment.getServiceId());
+            }
         }
-        
+
         return response;
     }
-    
+
     private UrgencyLevel parseUrgencyLevel(String level) {
         if (level == null) {
             return UrgencyLevel.ROUTINE;
@@ -342,20 +374,20 @@ public class AppointmentService {
             return UrgencyLevel.ROUTINE;
         }
     }
-    
-    private boolean doesTimeOverlap(LocalTime start1, LocalTime end1, 
+
+    private boolean doesTimeOverlap(LocalTime start1, LocalTime end1,
                                      LocalTime start2, LocalTime end2) {
         return (start1.isBefore(end2) && end1.isAfter(start2));
     }
-    
+
     private void sendAppointmentNotification(Appointment appointment, String templateName) {
         Map<String, Object> notificationRequest = new HashMap<>();
         notificationRequest.put("userId", appointment.getPatientId());
         notificationRequest.put("templateName", templateName);
         notificationRequest.put("type", "EMAIL");
-        
+
         Map<String, String> templateVariables = new HashMap<>();
-        
+
         // Fetch actual names from auth service
         try {
             String patientName = authServiceClient.getUserFullName(appointment.getPatientId());
@@ -364,7 +396,7 @@ public class AppointmentService {
             log.warn("Failed to fetch patient name for notification: {}", e.getMessage());
             templateVariables.put("patient_name", "Patient");
         }
-        
+
         try {
             String dentistName = authServiceClient.getUserFullName(appointment.getDentistId());
             templateVariables.put("dentist_name", dentistName);
@@ -372,16 +404,16 @@ public class AppointmentService {
             log.warn("Failed to fetch dentist name for notification: {}", e.getMessage());
             templateVariables.put("dentist_name", "Dr. Dentist");
         }
-        
+
         templateVariables.put("appointment_date", appointment.getAppointmentDate().toString());
         templateVariables.put("appointment_time", appointment.getStartTime().toString());
-        
+
         notificationRequest.put("templateVariables", templateVariables);
-        
+
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("appointment_id", appointment.getId());
         notificationRequest.put("metadata", metadata);
-        
+
         notificationClient.sendNotification(notificationRequest);
     }
-} 
+}

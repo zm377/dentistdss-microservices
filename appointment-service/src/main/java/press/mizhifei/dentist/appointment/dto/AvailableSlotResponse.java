@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.appointment.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,16 +19,12 @@ import java.time.LocalTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DentistAvailabilityResponse {
-    private Integer id;
-    private Long dentistId;
-    private Long clinicId;
-    private Integer dayOfWeek;
-    private String dayName;
+public class AvailableSlotResponse {
+    private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
-    private Boolean isRecurring;
-    private LocalDate effectiveFrom;
-    private LocalDate effectiveUntil;
-    private Boolean isActive;
-} 
+    private Long dentistId;
+    private String dentistName;
+    private Long clinicId;
+    private boolean available;
+}
