@@ -16,24 +16,25 @@ spring:
     mongodb:
       uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: gpt-4.1-nano-2025-04-14
+    # AI Provider Configuration
     vertex:
       ai:
         gemini:
           project-id: ${VERTEX_AI_PROJECT_ID:}
-          location: ${VERTEX_AI_LOCATION:us-central1}
+          location: ${VERTEX_AI_LOCATION:australia-southeast1}
           chat:
             options:
-              model: gemini-2.5-pro-20250506
+              model: ${GEMINI_MODEL:gemini-2.5-pro-preview-06-05}
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4.1-nano-2025-04-14}
 
 # GenAI Provider Configuration
 genai:
   providers:
-    default-provider: openai
+    default-provider: vertexai
     switching:
       enable-failover: true
       max-retries: 3
@@ -42,16 +43,16 @@ genai:
       load-balancing-strategy: round_robin
     openai:
       enabled: true
-      default-model: gpt-4.1-nano-2025-04-14
-      weight: 50
+      default-model: ${OPENAI_MODEL:gpt-4.1-nano-2025-04-14}
+      weight: 1
       max-tokens: 4096
       temperature: 0.7
     vertexai:
-      enabled: ${VERTEX_AI_ENABLED:false}
+      enabled: ${VERTEX_AI_ENABLED:true}
       project-id: ${VERTEX_AI_PROJECT_ID:}
-      location: ${VERTEX_AI_LOCATION:us-central1}
-      default-model: gemini-2.5-pro-20250506
-      weight: 50
+      location: ${VERTEX_AI_LOCATION:australia-southeast1}
+      default-model: ${GEMINI_MODEL:gemini-2.5-pro-preview-06-05}
+      weight: 99
       max-tokens: 4096
       temperature: 0.7
 

@@ -3,6 +3,8 @@ package press.mizhifei.dentist.genai.config;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +26,7 @@ public class AIProviderConfig {
     /**
      * Default provider to use (openai or vertexai)
      */
-    private String defaultProvider = "openai";
+    private String defaultProvider = "vertexai";
 
     /**
      * Provider switching configuration
@@ -102,7 +104,7 @@ public class AIProviderConfig {
         /**
          * Whether Vertex AI provider is enabled
          */
-        private boolean enabled = false;
+        private boolean enabled = true;
 
         /**
          * Google Cloud Project ID
@@ -117,7 +119,7 @@ public class AIProviderConfig {
         /**
          * Default model to use
          */
-        private String defaultModel = "gemini-2.5-pro-20250506";
+        private String defaultModel = "gemini-2.5-pro-preview-06-05";
 
         /**
          * Weight for load balancing (higher = more requests)
@@ -136,54 +138,66 @@ public class AIProviderConfig {
     }
 
     /**
-     * Creates the primary ChatClient bean with provider switching capability
+     * Sets Vertex AI Gemini as the primary ChatModel to resolve auto-configuration conflicts
      */
     @Bean
     @Primary
-    public ChatClient chatClient(ChatClient.Builder openAiChatClientBuilder,
-                               ChatClient.Builder vertexAiChatClientBuilder) {
-        
-        log.info("Configuring AI providers - Default: {}, OpenAI enabled: {}, VertexAI enabled: {}", 
-                defaultProvider, openai.isEnabled(), vertexai.isEnabled());
+    public ChatModel primaryChatModel(@Qualifier("vertexAiGeminiChat") ChatModel vertexAiChatModel,
+                                     @Qualifier("openAiChatModel") ChatModel openAiChatModel) {
 
-        // For now, return the default provider's client
-        // The ProviderSwitchingChatClient will handle the actual switching logic
-        if ("vertexai".equalsIgnoreCase(defaultProvider) && vertexai.isEnabled()) {
-            log.info("Using Vertex AI as primary provider");
-            return vertexAiChatClientBuilder.build();
+        log.info("Configuring primary ChatModel - Default provider: {}, VertexAI enabled: {}, OpenAI enabled: {}",
+                defaultProvider, vertexai.isEnabled(), openai.isEnabled());
+
+        // Set Vertex AI Gemini as primary as requested
+        if (vertexai.isEnabled()) {
+            log.info("Setting Vertex AI Gemini as primary ChatModel");
+            return vertexAiChatModel;
         } else if (openai.isEnabled()) {
-            log.info("Using OpenAI as primary provider");
-            return openAiChatClientBuilder.build();
+            log.info("Falling back to OpenAI as primary ChatModel (Vertex AI disabled)");
+            return openAiChatModel;
         } else {
             throw new IllegalStateException("No AI provider is enabled or configured properly");
         }
     }
 
     /**
+     * Creates the primary ChatClient bean with provider switching capability
+     */
+    @Bean("primaryChatClient")
+    @Primary
+    public ChatClient chatClient(ChatClient.Builder chatClientBuilder) {
+
+        log.info("Configuring primary ChatClient using primary ChatModel");
+
+        // The ChatClient.Builder will automatically use the @Primary ChatModel
+        return chatClientBuilder.build();
+    }
+
+    /**
      * Creates OpenAI ChatClient bean
      */
     @Bean("openAiChatClient")
-    public ChatClient openAiChatClient(ChatClient.Builder builder) {
+    public ChatClient openAiChatClient(@Qualifier("openAiChatModel") ChatModel openAiChatModel) {
         if (!openai.isEnabled()) {
             log.warn("OpenAI provider is disabled");
             return null;
         }
 
-        return builder.build();
+        return ChatClient.builder(openAiChatModel).build();
     }
 
     /**
      * Creates Vertex AI ChatClient bean (if available)
      */
     @Bean("vertexAiChatClient")
-    public ChatClient vertexAiChatClient(ChatClient.Builder builder) {
+    public ChatClient vertexAiChatClient(@Qualifier("vertexAiGeminiChat") ChatModel vertexAiChatModel) {
         if (!vertexai.isEnabled()) {
             log.warn("Vertex AI provider is disabled");
             return null;
         }
 
         try {
-            return builder.build();
+            return ChatClient.builder(vertexAiChatModel).build();
         } catch (Exception e) {
             log.error("Failed to configure Vertex AI ChatClient: {}", e.getMessage());
             return null;
