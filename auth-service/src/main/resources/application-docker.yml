@@ -6,6 +6,8 @@ spring:
     name: auth-service
   config:
     import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  jmx:
+    enabled: false
 
   # Database Configuration (PostgreSQL)
   datasource:
@@ -47,6 +49,19 @@ eureka:
       defaultZone: http://discovery-server:8761/eureka
   instance:
     preferIpAddress: false
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
 
 # OpenAPI/SpringDoc Configuration - enabled for docker development
 springdoc:

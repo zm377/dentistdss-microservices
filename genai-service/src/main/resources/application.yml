@@ -29,6 +29,19 @@ eureka:
   instance:
     preferIpAddress: false
 
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
+
 # OpenAPI/SpringDoc Configuration - enabled for development
 springdoc:
   api-docs:
@@ -37,8 +50,6 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
-
-
 
 logging:
   level:

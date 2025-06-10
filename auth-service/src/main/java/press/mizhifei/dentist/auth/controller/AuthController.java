@@ -16,6 +16,7 @@ import press.mizhifei.dentist.auth.dto.SignUpStaffRequest;
 import press.mizhifei.dentist.auth.dto.UserResponse;
 import press.mizhifei.dentist.auth.dto.VerifyCodeRequest;
 import press.mizhifei.dentist.auth.service.AuthService;
+import press.mizhifei.dentist.auth.service.OAuthUserService;
 
 /**
  *
@@ -31,6 +32,7 @@ import press.mizhifei.dentist.auth.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuthUserService oAuthUserService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<?>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -39,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/oauth/process")
     public ResponseEntity<ApiResponse<AuthResponse>> processOAuthLogin(@Valid @RequestBody OAuthLoginRequest oAuthLoginRequest) {
-        return ResponseEntity.ok(authService.processOAuthLogin(oAuthLoginRequest));
+        return ResponseEntity.ok(oAuthUserService.processOAuthLogin(oAuthLoginRequest));
     }
 
     @PostMapping("/signup")

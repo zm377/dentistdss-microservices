@@ -44,6 +44,19 @@ eureka:
     preferIpAddress: false
 
 # OpenAPI/SpringDoc Configuration - enabled for docker development
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
 springdoc:
   api-docs:
     path: /v3/api-docs

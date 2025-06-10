@@ -57,14 +57,16 @@ public class UserApprovalService {
         // Determine requested role based on user's current roles
         Role requestedRole = determineRequestedRole(user);
 
-        // Use the native query method with explicit casting
-        UserApprovalRequest saved = approvalRequestRepository.saveWithCasting(
-                userId,
-                requestedRole.toString(),
-                user.getClinicId(),
-                User.ApprovalStatus.PENDING.toString(),
-                requestReason
-        );
+        // Create and save the approval request using JPA
+        UserApprovalRequest approvalRequest = UserApprovalRequest.builder()
+                .userId(userId)
+                .requestedRole(requestedRole)
+                .clinicId(user.getClinicId())
+                .status(User.ApprovalStatus.PENDING)
+                .requestReason(requestReason)
+                .build();
+
+        UserApprovalRequest saved = approvalRequestRepository.save(approvalRequest);
 
         // Send notification to approvers
         sendApprovalNotification(user, requestedRole);
@@ -89,17 +91,21 @@ public class UserApprovalService {
         User user = userRepository.findById(approvalRequest.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Update approval request using native query with casting
-        String newStatus = reviewRequest.getApproved() ? 
-                User.ApprovalStatus.APPROVED.toString() : 
-                User.ApprovalStatus.REJECTED.toString();
-                
-        UserApprovalRequest updatedRequest = approvalRequestRepository.updateWithCasting(
+        // Update approval request using the new method
+        User.ApprovalStatus newStatus = reviewRequest.getApproved() ?
+                User.ApprovalStatus.APPROVED :
+                User.ApprovalStatus.REJECTED;
+
+        approvalRequestRepository.updateApprovalStatus(
                 requestId,
-                newStatus,
+                newStatus.toString(),
                 reviewRequest.getReviewNotes(),
                 reviewedBy
         );
+
+        // Fetch the updated request
+        UserApprovalRequest updatedRequest = approvalRequestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Approval request not found after update"));
 
         // Update user if approved
         if (reviewRequest.getApproved()) {

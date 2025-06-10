@@ -26,6 +26,19 @@ eureka:
     preferIpAddress: false
 
 logging:
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
   level:
     press.mizhifei.dentist: INFO
     org.springframework: INFO

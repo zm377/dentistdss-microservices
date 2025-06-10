@@ -15,7 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.AuthResponse;
 import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
-import press.mizhifei.dentist.auth.service.AuthService;
+import press.mizhifei.dentist.auth.service.OAuthUserService;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,7 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final AuthService authService;
+    private final OAuthUserService oAuthUserService;
 
     @Value("${app.oauth2.authorizedRedirectUris:http://localhost:3000/oauth2/redirect,https://dentist.mizhifei.press/oauth2/redirect}")
     private List<String> authorizedRedirectUris;
@@ -70,11 +70,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         try {
             log.debug("Processing OAuth login request: {}", oAuthLoginRequest);
-            // Process OAuth login directly through AuthService (no more Feign client needed)
-            ApiResponse<AuthResponse> authResponseApi = authService.processOAuthLogin(oAuthLoginRequest);
+            // Process OAuth login through OAuthUserService (no circular dependency)
+            ApiResponse<AuthResponse> authResponseApi = oAuthUserService.processOAuthLogin(oAuthLoginRequest);
             
             if (!authResponseApi.isSuccess() || authResponseApi.getDataObject() == null || authResponseApi.getDataObject().getAccessToken() == null) {
-                log.error("Failed to get valid AuthResponse from auth-service for email: {}", email);
+                log.error("Failed to get valid AuthResponse from OAuthUserService for email: {}", email);
                 getRedirectStrategy().sendRedirect(request, response, determineTargetUrl(request, response, authentication) + "?error=AuthenticationFailed");
                 return;
             }

@@ -484,72 +484,7 @@ public class AuthService {
         return ApiResponse.success(user.toUserResponse());
     }
 
-    @Transactional
-    public ApiResponse<AuthResponse> processOAuthLogin(OAuthLoginRequest oAuthLoginRequest) {
-        Optional<User> userOptionalByProviderId = userRepository.findByProviderIdAndProvider(
-                oAuthLoginRequest.getProviderId(), AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()));
 
-        User user;
-        if (userOptionalByProviderId.isPresent()) {
-            // User found by provider ID, this is a returning OAuth user
-            user = userOptionalByProviderId.get();
-            // if the user is Clinic admin, Dentist, Receptionist, and not enabled, login failed
-            if ((user.getRoles().contains(Role.CLINIC_ADMIN)
-                    || user.getRoles().contains(Role.DENTIST)
-                    || user.getRoles().contains(Role.RECEPTIONIST))
-                    && !user.isEnabled()) {
-                return ApiResponse.error("Your account is not activated, please contact the administrator");
-            }
-            // Optionally update first/last name if they changed in Google profile
-            user.setFirstName(oAuthLoginRequest.getFirstName());
-            user.setLastName(oAuthLoginRequest.getLastName());
-            user.setLastLoginAt(LocalDateTime.now());
-            user.setUpdatedAt(LocalDateTime.now());
-            user = userRepository.save(user);
-        } else {
-            // No user found by provider ID, check by email
-            Optional<User> userOptionalByEmail = userRepository.findByEmail(oAuthLoginRequest.getEmail());
-            if (userOptionalByEmail.isPresent()) {
-                // User found by email, link this OAuth account to the existing local account
-                user = userOptionalByEmail.get();
-                user.setProvider(AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()));
-                user.setProviderId(oAuthLoginRequest.getProviderId());
-                // If names are empty in local but available from OAuth, set them
-                if (user.getFirstName() == null || user.getFirstName().isEmpty()) {
-                    user.setFirstName(oAuthLoginRequest.getFirstName());
-                }
-                if (user.getLastName() == null || user.getLastName().isEmpty()) {
-                    user.setLastName(oAuthLoginRequest.getLastName());
-                }
-                user.setEmailVerified(true); // Email is verified by Google
-                user.setEnabled(true); // Enable account
-                user.setLastLoginAt(LocalDateTime.now());
-                user.setUpdatedAt(LocalDateTime.now());
-                user = userRepository.save(user);
-            } else {
-                // New user, create an account
-                user = User.builder()
-                        .email(oAuthLoginRequest.getEmail())
-                        .firstName(oAuthLoginRequest.getFirstName())
-                        .lastName(oAuthLoginRequest.getLastName())
-                        .provider(AuthProvider.valueOf(oAuthLoginRequest.getProvider().toUpperCase()))
-                        .providerId(oAuthLoginRequest.getProviderId())
-                        .roles(new HashSet<>(Collections.singleton(Role.PATIENT))) // Default role for new OAuth users
-                        .emailVerified(true) // Email is verified by Google
-                        .enabled(true)
-                        .accountNonExpired(true)
-                        .credentialsNonExpired(true)
-                        .accountNonLocked(true)
-                        .lastLoginAt(LocalDateTime.now())
-                        .build();
-                user = userRepository.save(user);
-            }
-        }
-
-        // Authenticate and generate token for the user
-        AuthResponse authResponse = authenticateAndGenerateToken(user);
-        return ApiResponse.success(authResponse);
-    }
 
     @Transactional
     public ApiResponse<String> changePassword(ChangePasswordRequest changePasswordRequest) {

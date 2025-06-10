@@ -27,6 +27,19 @@ eureka:
   instance:
     preferIpAddress: false
 
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info  # Minimal exposure for production
+  endpoint:
+    health:
+      show-details: when-authorized
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
+
 # OpenAPI/SpringDoc Configuration - DISABLED for production
 springdoc:
   api-docs:

@@ -6,6 +6,9 @@ spring:
     name: auth-service
   config:
     import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@localhost:8888
+  jmx:
+    enabled: false
+
 
   # Database Configuration (PostgreSQL)
   datasource:
@@ -57,6 +60,19 @@ jwt:
     private-key: ${JWT_RSA_PRIVATE_KEY:}
     public-key: ${JWT_RSA_PUBLIC_KEY:}
     key-id: ${JWT_RSA_KEY_ID:dentistdss}
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
 
 # OpenAPI/SpringDoc Configuration - enabled for development
 springdoc:

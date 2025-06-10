@@ -14,7 +14,7 @@ import press.mizhifei.dentist.auth.dto.ApiResponse;
 import press.mizhifei.dentist.auth.dto.AuthResponse;
 import press.mizhifei.dentist.auth.dto.IdTokenRequest;
 import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
-import press.mizhifei.dentist.auth.service.AuthService;
+import press.mizhifei.dentist.auth.service.OAuthUserService;
 
 /**
  * OAuth2 Controller for handling OAuth2 authentication flows
@@ -32,7 +32,7 @@ import press.mizhifei.dentist.auth.service.AuthService;
 public class OAuth2Controller {
 
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
-    private final AuthService authService;
+    private final OAuthUserService oAuthUserService;
 
     /**
      * Authenticate user with Google ID token (for popup-based OAuth2 flows)
@@ -68,7 +68,7 @@ public class OAuth2Controller {
                     .build();
 
             // Process OAuth login directly through AuthService (no more Feign client needed)
-            ApiResponse<AuthResponse> response = authService.processOAuthLogin(oAuthLoginRequest);
+            ApiResponse<AuthResponse> response = oAuthUserService.processOAuthLogin(oAuthLoginRequest);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
