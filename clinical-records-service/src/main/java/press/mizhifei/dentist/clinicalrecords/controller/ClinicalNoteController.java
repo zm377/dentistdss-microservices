@@ -44,8 +44,11 @@ public class ClinicalNoteController {
     public ResponseEntity<ApiResponse<ClinicalNoteResponse>> signClinicalNote(
             @PathVariable Long id,
             @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        Long signedBy = userId != null ? userId : 1L; // TODO: Get from security context
-        ClinicalNoteResponse response = clinicalNoteService.signClinicalNote(id, signedBy);
+        if (userId == null || userId == 0) {
+            return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Authentication required"));
+        }
+        ClinicalNoteResponse response = clinicalNoteService.signClinicalNote(id, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     

@@ -50,6 +50,7 @@ public class JwtTokenProvider {
                 .subject(userPrincipal.getId().toString())
                 .claim("email", userPrincipal.getEmail())
                 .claim("roles", authorities)
+                .claim("clinicId", userPrincipal.getClinicId())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(jwtKeyProvider.getPrivateKey())
