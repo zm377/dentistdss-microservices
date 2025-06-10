@@ -17,6 +17,7 @@ SERVICES=(
   "genai-service"
   "clinic-service"
   "appointment-service"
+  "clinical-records-service"
   "user-profile-service"
   "admin-server"
   "notification-service"

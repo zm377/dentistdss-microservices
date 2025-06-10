@@ -1,13 +1,13 @@
-package press.mizhifei.dentist.clinic.controller;
+package press.mizhifei.dentist.clinicalrecords.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import press.mizhifei.dentist.clinic.dto.ApiResponse;
-import press.mizhifei.dentist.clinic.dto.TreatmentPlanRequest;
-import press.mizhifei.dentist.clinic.dto.TreatmentPlanResponse;
-import press.mizhifei.dentist.clinic.service.TreatmentPlanService;
+import press.mizhifei.dentist.clinicalrecords.dto.ApiResponse;
+import press.mizhifei.dentist.clinicalrecords.dto.TreatmentPlanRequest;
+import press.mizhifei.dentist.clinicalrecords.dto.TreatmentPlanResponse;
+import press.mizhifei.dentist.clinicalrecords.service.TreatmentPlanService;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ import java.util.List;
  *
  */
 @RestController
-@RequestMapping("/clinic/treatment-plan")
+@RequestMapping("/clinical-records/treatment-plan")
 @RequiredArgsConstructor
 public class TreatmentPlanController {
     
@@ -78,4 +78,11 @@ public class TreatmentPlanController {
         List<TreatmentPlanResponse> plans = treatmentPlanService.getDentistTreatmentPlans(dentistId);
         return ResponseEntity.ok(ApiResponse.success(plans));
     }
-} 
+    
+    @GetMapping("/{parentPlanId}/versions")
+    public ResponseEntity<ApiResponse<List<TreatmentPlanResponse>>> getPlanVersions(
+            @PathVariable Integer parentPlanId) {
+        List<TreatmentPlanResponse> plans = treatmentPlanService.getPlanVersions(parentPlanId);
+        return ResponseEntity.ok(ApiResponse.success(plans));
+    }
+}

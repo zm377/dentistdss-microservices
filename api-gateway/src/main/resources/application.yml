@@ -89,6 +89,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Clinical Records Service
+            - id: clinical-records-service
+              uri: lb://clinical-records-service
+              predicates:
+                - Path=/api/clinical-records/**
+              filters:
+                - StripPrefix=1
+
             # User Profile Service (Patient and User Management)
             - id: user-profile-service-patient
               uri: lb://user-profile-service
@@ -185,6 +193,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Clinical Records Service Documentation
+            - id: clinical-records-service-openapi
+              uri: lb://clinical-records-service
+              predicates:
+                - Path=/clinical-records-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
             # User Profile Service Documentation
             - id: user-profile-service-openapi
               uri: lb://user-profile-service
@@ -261,6 +277,8 @@ springdoc:
         url: /clinic-service/v3/api-docs
       - name: appointment-service
         url: /appointment-service/v3/api-docs
+      - name: clinical-records-service
+        url: /clinical-records-service/v3/api-docs
       - name: genai-service
         url: /genai-service/v3/api-docs
       - name: user-profile-service

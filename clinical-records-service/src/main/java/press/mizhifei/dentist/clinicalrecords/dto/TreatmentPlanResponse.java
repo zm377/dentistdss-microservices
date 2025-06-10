@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.clinicalrecords.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +34,8 @@ public class TreatmentPlanResponse {
     private BigDecimal insuranceCoverage;
     private BigDecimal patientCost;
     private String status;
+    private Integer version;
+    private Integer parentPlanId;
     private LocalDateTime createdAt;
     private LocalDateTime acceptedAt;
     private LocalDateTime completedAt;
@@ -54,4 +56,4 @@ public class TreatmentPlanResponse {
         private Integer sequenceOrder;
         private String notes;
     }
-} 
+}

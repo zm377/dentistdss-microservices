@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.clinicalrecords.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -56,9 +56,4 @@ public class TreatmentPlanItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "treatment_plan_id", insertable = false, updatable = false)
     private TreatmentPlan treatmentPlan;
-    
-    // Many-to-One relationship with Service
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", insertable = false, updatable = false)
-    private Service service;
-} 
+}

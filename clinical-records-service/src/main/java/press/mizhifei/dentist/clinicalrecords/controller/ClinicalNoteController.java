@@ -1,13 +1,13 @@
-package press.mizhifei.dentist.clinic.controller;
+package press.mizhifei.dentist.clinicalrecords.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import press.mizhifei.dentist.clinic.dto.ApiResponse;
-import press.mizhifei.dentist.clinic.dto.ClinicalNoteRequest;
-import press.mizhifei.dentist.clinic.dto.ClinicalNoteResponse;
-import press.mizhifei.dentist.clinic.service.ClinicalNoteService;
+import press.mizhifei.dentist.clinicalrecords.dto.ApiResponse;
+import press.mizhifei.dentist.clinicalrecords.dto.ClinicalNoteRequest;
+import press.mizhifei.dentist.clinicalrecords.dto.ClinicalNoteResponse;
+import press.mizhifei.dentist.clinicalrecords.service.ClinicalNoteService;
 
 import java.util.List;
 
@@ -19,12 +19,12 @@ import java.util.List;
  *
  */
 @RestController
-@RequestMapping("/clinic/clinical-note")
+@RequestMapping("/clinical-records/note")
 @RequiredArgsConstructor
 public class ClinicalNoteController {
     
     private final ClinicalNoteService clinicalNoteService;
-
+    
     @PostMapping
     public ResponseEntity<ApiResponse<ClinicalNoteResponse>> createClinicalNote(
             @Valid @RequestBody ClinicalNoteRequest request) {
@@ -55,14 +55,6 @@ public class ClinicalNoteController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     
-    @GetMapping("/patient/{patientId}")
-    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getPatientClinicalNotes(
-            @PathVariable Long patientId,
-            @RequestParam(defaultValue = "false") boolean includeDrafts) {
-        List<ClinicalNoteResponse> notes = clinicalNoteService.getPatientClinicalNotes(patientId, includeDrafts);
-        return ResponseEntity.ok(ApiResponse.success(notes));
-    }
-
     @GetMapping("/clinic/{clinicId}")
     public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getClinicClinicalNotes(
             @PathVariable Long clinicId) {
@@ -70,19 +62,41 @@ public class ClinicalNoteController {
         return ResponseEntity.ok(ApiResponse.success(notes));
     }
     
-    @GetMapping("/dentist/{dentistId}/drafts")
-    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getDentistDraftNotes(
-            @PathVariable Long dentistId) {
-        List<ClinicalNoteResponse> notes = clinicalNoteService.getDentistDraftNotes(dentistId);
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getPatientClinicalNotes(
+            @PathVariable Long patientId,
+            @RequestParam(defaultValue = "false") boolean includeDrafts) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.getPatientClinicalNotes(patientId, includeDrafts);
         return ResponseEntity.ok(ApiResponse.success(notes));
     }
-
-
-
+    
+    @GetMapping("/patient/{patientId}/category/{category}")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getPatientNotesByCategory(
+            @PathVariable Long patientId,
+            @PathVariable String category) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.getPatientNotesByCategory(patientId, category);
+        return ResponseEntity.ok(ApiResponse.success(notes));
+    }
+    
+    @GetMapping("/patient/{patientId}/search")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> searchPatientNotes(
+            @PathVariable Long patientId,
+            @RequestParam String searchTerm) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.searchPatientNotes(patientId, searchTerm);
+        return ResponseEntity.ok(ApiResponse.success(notes));
+    }
+    
     @GetMapping("/dentist/{dentistId}")
     public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getDentistClinicalNotes(
             @PathVariable Long dentistId) {
         List<ClinicalNoteResponse> notes = clinicalNoteService.getDentistClinicalNotes(dentistId);
+        return ResponseEntity.ok(ApiResponse.success(notes));
+    }
+    
+    @GetMapping("/dentist/{dentistId}/drafts")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getDentistDraftNotes(
+            @PathVariable Long dentistId) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.getDentistDraftNotes(dentistId);
         return ResponseEntity.ok(ApiResponse.success(notes));
     }
     
@@ -95,4 +109,18 @@ public class ClinicalNoteController {
         }
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-} 
+    
+    @GetMapping("/visit/{visitId}")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getVisitClinicalNotes(
+            @PathVariable Long visitId) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.getVisitClinicalNotes(visitId);
+        return ResponseEntity.ok(ApiResponse.success(notes));
+    }
+    
+    @GetMapping("/{parentNoteId}/versions")
+    public ResponseEntity<ApiResponse<List<ClinicalNoteResponse>>> getNoteVersions(
+            @PathVariable Long parentNoteId) {
+        List<ClinicalNoteResponse> notes = clinicalNoteService.getNoteVersions(parentNoteId);
+        return ResponseEntity.ok(ApiResponse.success(notes));
+    }
+}

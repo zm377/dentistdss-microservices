@@ -1,8 +1,8 @@
-package press.mizhifei.dentist.clinic.repository;
+package press.mizhifei.dentist.clinicalrecords.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import press.mizhifei.dentist.clinic.model.TreatmentPlanItem;
+import press.mizhifei.dentist.clinicalrecords.model.TreatmentPlanItem;
 
 import java.util.List;
 
@@ -19,4 +19,4 @@ public interface TreatmentPlanItemRepository extends JpaRepository<TreatmentPlan
     List<TreatmentPlanItem> findByTreatmentPlanIdOrderBySequenceOrder(Integer treatmentPlanId);
     
     List<TreatmentPlanItem> findByTreatmentPlanIdAndStatus(Integer treatmentPlanId, String status);
-} 
+}

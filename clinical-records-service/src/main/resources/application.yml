@@ -1,0 +1,122 @@
+# =============================================================================
+# Clinical Records Service Configuration - Development Profile
+# =============================================================================
+
+server:
+  port: 8090
+
+spring:
+  application:
+    name: clinical-records-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dentistdss
+    username: dentistdss
+    password: dentistdss123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/dentistdss_files
+      database: dentistdss_files
+
+# =============================================================================
+# Service Discovery Configuration
+# =============================================================================
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    preferIpAddress: true
+    hostname: localhost
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration
+# =============================================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  info:
+    title: Clinical Records Service API
+    description: API for managing clinical records, treatment plans, and dental images
+    version: 1.0.0
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =============================================================================
+# Management & Actuator Configuration
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# =============================================================================
+# Feign Configuration
+# =============================================================================
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: full
+
+# =============================================================================
+# File Upload Configuration
+# =============================================================================
+file:
+  upload:
+    max-file-size: 52428800  # 50MB
+    max-request-size: 104857600  # 100MB
+    allowed-image-types:
+      - image/jpeg
+      - image/png
+      - image/tiff
+      - image/bmp
+    thumbnail-width: 200
+    thumbnail-height: 200
+
+# =============================================================================
+# Application Specific Configuration
+# =============================================================================
+clinical-records:
+  service:
+    image-retention-days: 2555  # 7 years
+    note-auto-save-interval: 30  # seconds
+    max-note-versions: 10

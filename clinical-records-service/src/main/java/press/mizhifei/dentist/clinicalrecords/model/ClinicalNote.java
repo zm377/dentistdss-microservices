@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.clinicalrecords.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -40,6 +40,9 @@ public class ClinicalNote {
     @Column(name = "clinic_id", nullable = false)
     private Long clinicId;
     
+    @Column(name = "visit_id")
+    private Long visitId; // New field for service visit tracking
+    
     @Column(name = "chief_complaint", columnDefinition = "TEXT")
     private String chiefComplaint;
     
@@ -67,9 +70,19 @@ public class ClinicalNote {
     @Column(columnDefinition = "text[]")
     private String[] attachments; // URLs to X-rays, images, etc.
     
+    @Column(name = "category")
+    private String category; // ROUTINE, EMERGENCY, CONSULTATION, FOLLOW_UP
+    
     @Column(name = "is_draft")
     @Builder.Default
     private Boolean isDraft = false;
+    
+    @Column(name = "version")
+    @Builder.Default
+    private Integer version = 1; // For version history
+    
+    @Column(name = "parent_note_id")
+    private Long parentNoteId; // For note revisions
     
     @Column(name = "created_at")
     @Builder.Default
@@ -95,4 +108,4 @@ public class ClinicalNote {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-} 
+}

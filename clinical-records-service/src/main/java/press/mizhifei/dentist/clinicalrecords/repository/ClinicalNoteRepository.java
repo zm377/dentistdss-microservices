@@ -1,10 +1,10 @@
-package press.mizhifei.dentist.clinic.repository;
+package press.mizhifei.dentist.clinicalrecords.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import press.mizhifei.dentist.clinic.model.ClinicalNote;
+import press.mizhifei.dentist.clinicalrecords.model.ClinicalNote;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +25,8 @@ public interface ClinicalNoteRepository extends JpaRepository<ClinicalNote, Long
     
     List<ClinicalNote> findByDentistIdOrderByCreatedAtDesc(Long dentistId);
     
+    List<ClinicalNote> findByVisitIdOrderByCreatedAtDesc(Long visitId);
+    
     Optional<ClinicalNote> findByAppointmentId(Long appointmentId);
     
     @Query("SELECT cn FROM ClinicalNote cn WHERE cn.patientId = :patientId " +
@@ -34,4 +36,21 @@ public interface ClinicalNoteRepository extends JpaRepository<ClinicalNote, Long
     @Query("SELECT cn FROM ClinicalNote cn WHERE cn.dentistId = :dentistId " +
            "AND cn.isDraft = true ORDER BY cn.updatedAt DESC")
     List<ClinicalNote> findDraftNotesByDentistId(@Param("dentistId") Long dentistId);
-} 
+    
+    @Query("SELECT cn FROM ClinicalNote cn WHERE cn.patientId = :patientId " +
+           "AND cn.category = :category ORDER BY cn.createdAt DESC")
+    List<ClinicalNote> findByPatientIdAndCategory(@Param("patientId") Long patientId, 
+                                                  @Param("category") String category);
+    
+    @Query("SELECT cn FROM ClinicalNote cn WHERE cn.parentNoteId = :parentNoteId " +
+           "ORDER BY cn.version DESC")
+    List<ClinicalNote> findNoteVersions(@Param("parentNoteId") Long parentNoteId);
+    
+    @Query("SELECT cn FROM ClinicalNote cn WHERE cn.patientId = :patientId " +
+           "AND (cn.chiefComplaint ILIKE %:searchTerm% " +
+           "OR cn.diagnosis ILIKE %:searchTerm% " +
+           "OR cn.treatmentPerformed ILIKE %:searchTerm%) " +
+           "ORDER BY cn.createdAt DESC")
+    List<ClinicalNote> searchNotesByPatient(@Param("patientId") Long patientId, 
+                                           @Param("searchTerm") String searchTerm);
+}

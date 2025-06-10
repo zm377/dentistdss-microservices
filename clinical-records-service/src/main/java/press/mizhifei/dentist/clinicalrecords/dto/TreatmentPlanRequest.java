@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.clinicalrecords.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -44,6 +44,8 @@ public class TreatmentPlanRequest {
     
     private BigDecimal patientCost;
     
+    private Integer parentPlanId; // For creating plan revisions
+    
     @Valid
     private List<TreatmentPlanItemRequest> items;
     
@@ -66,4 +68,4 @@ public class TreatmentPlanRequest {
         
         private String notes;
     }
-} 
+}

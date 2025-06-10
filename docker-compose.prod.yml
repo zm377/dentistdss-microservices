@@ -141,7 +141,48 @@ services:
       - "8083:8083"
     networks:
       - dentistdss-network
-      
+
+  appointment-service:
+    image: dentistdss_appointment-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+    ports:
+      - "8089:8089"
+    networks:
+      - dentistdss-network
+
+  clinical-records-service:
+    image: dentistdss_clinical-records-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MONGODB_URI=mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss_files?authSource=admin
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "8090:8090"
+    networks:
+      - dentistdss-network
+
   admin-server:
     image: dentistdss_admin-server:latest
     restart: always

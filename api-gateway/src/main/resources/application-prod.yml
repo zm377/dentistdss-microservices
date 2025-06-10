@@ -87,6 +87,22 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Appointment Service
+            - id: appointment-service
+              uri: lb://appointment-service
+              predicates:
+                - Path=/api/appointment/**
+              filters:
+                - StripPrefix=1
+
+            # Clinical Records Service
+            - id: clinical-records-service
+              uri: lb://clinical-records-service
+              predicates:
+                - Path=/api/clinical-records/**
+              filters:
+                - StripPrefix=1
+
             # User Profile Service (Patient and User Management)
             - id: user-profile-service-patient
               uri: lb://user-profile-service

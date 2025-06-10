@@ -38,6 +38,7 @@
 		<module>auth-service</module>
 		<module>clinic-service</module>
 		<module>appointment-service</module>
+		<module>clinical-records-service</module>
 		<module>admin-server</module>
 		<module>genai-service</module>
 		<module>user-profile-service</module>

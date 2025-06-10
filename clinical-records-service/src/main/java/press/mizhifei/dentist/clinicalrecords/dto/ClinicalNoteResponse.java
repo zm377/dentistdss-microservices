@@ -1,11 +1,11 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.clinicalrecords.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 /**
  *
@@ -18,38 +18,32 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClinicalNoteRequest {
-    
+public class ClinicalNoteResponse {
+    private Long id;
     private Long appointmentId;
-    
-    @NotNull(message = "Patient ID is required")
     private Long patientId;
-    
-    @NotNull(message = "Dentist ID is required")
+    private String patientName;
     private Long dentistId;
-    
-    @NotNull(message = "Clinic ID is required")
+    private String dentistName;
     private Long clinicId;
-    
-    @Size(max = 1000, message = "Chief complaint must not exceed 1000 characters")
+    private String clinicName;
+    private Long visitId;
     private String chiefComplaint;
-    
     private String examinationFindings;
-    
     private String diagnosis;
-    
     private String treatmentPerformed;
-    
     private String treatmentPlan;
-    
     private String prescriptions;
-    
     private String followUpInstructions;
-    
     private String aiAssistedNotes;
-    
     private String[] attachments;
-    
-    @Builder.Default
-    private Boolean isDraft = true;
-} 
+    private String category;
+    private Boolean isDraft;
+    private Integer version;
+    private Long parentNoteId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime signedAt;
+    private Long signedBy;
+    private String signedByName;
+}

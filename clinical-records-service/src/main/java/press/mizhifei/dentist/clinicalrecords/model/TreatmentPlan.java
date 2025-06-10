@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.model;
+package press.mizhifei.dentist.clinicalrecords.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -58,6 +58,13 @@ public class TreatmentPlan {
     @Builder.Default
     private String status = "PROPOSED"; // PROPOSED, ACCEPTED, IN_PROGRESS, COMPLETED
     
+    @Column(name = "version")
+    @Builder.Default
+    private Integer version = 1; // For version history
+    
+    @Column(name = "parent_plan_id")
+    private Integer parentPlanId; // For plan revisions
+    
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -91,4 +98,4 @@ public class TreatmentPlan {
         item.setTreatmentPlan(null);
         item.setTreatmentPlanId(null);
     }
-} 
+}

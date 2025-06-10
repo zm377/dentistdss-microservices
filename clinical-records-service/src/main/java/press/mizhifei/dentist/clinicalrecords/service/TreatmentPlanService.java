@@ -1,16 +1,18 @@
-package press.mizhifei.dentist.clinic.service;
+package press.mizhifei.dentist.clinicalrecords.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import press.mizhifei.dentist.clinic.client.AuthServiceClient;
-import press.mizhifei.dentist.clinic.client.NotificationClient;
-import press.mizhifei.dentist.clinic.dto.TreatmentPlanRequest;
-import press.mizhifei.dentist.clinic.dto.TreatmentPlanResponse;
-import press.mizhifei.dentist.clinic.model.TreatmentPlan;
-import press.mizhifei.dentist.clinic.model.TreatmentPlanItem;
-import press.mizhifei.dentist.clinic.repository.*;
+import press.mizhifei.dentist.clinicalrecords.client.AuthServiceClient;
+import press.mizhifei.dentist.clinicalrecords.client.ClinicServiceClient;
+import press.mizhifei.dentist.clinicalrecords.client.NotificationClient;
+import press.mizhifei.dentist.clinicalrecords.dto.TreatmentPlanRequest;
+import press.mizhifei.dentist.clinicalrecords.dto.TreatmentPlanResponse;
+import press.mizhifei.dentist.clinicalrecords.model.TreatmentPlan;
+import press.mizhifei.dentist.clinicalrecords.model.TreatmentPlanItem;
+import press.mizhifei.dentist.clinicalrecords.repository.TreatmentPlanRepository;
+import press.mizhifei.dentist.clinicalrecords.repository.TreatmentPlanItemRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,13 +35,19 @@ public class TreatmentPlanService {
     
     private final TreatmentPlanRepository treatmentPlanRepository;
     private final TreatmentPlanItemRepository treatmentPlanItemRepository;
-    private final ServiceRepository serviceRepository;
-    private final ClinicRepository clinicRepository;
     private final AuthServiceClient authServiceClient;
+    private final ClinicServiceClient clinicServiceClient;
     private final NotificationClient notificationClient;
     
     @Transactional
     public TreatmentPlanResponse createTreatmentPlan(TreatmentPlanRequest request) {
+        // Handle plan versioning
+        Integer version = 1;
+        if (request.getParentPlanId() != null) {
+            List<TreatmentPlan> versions = treatmentPlanRepository.findPlanVersions(request.getParentPlanId());
+            version = versions.isEmpty() ? 2 : versions.get(0).getVersion() + 1;
+        }
+        
         TreatmentPlan treatmentPlan = TreatmentPlan.builder()
                 .patientId(request.getPatientId())
                 .dentistId(request.getDentistId())
@@ -49,7 +57,8 @@ public class TreatmentPlanService {
                 .totalCost(request.getTotalCost())
                 .insuranceCoverage(request.getInsuranceCoverage())
                 .patientCost(request.getPatientCost())
-                .status("PROPOSED")
+                .version(version)
+                .parentPlanId(request.getParentPlanId())
                 .build();
         
         TreatmentPlan saved = treatmentPlanRepository.save(treatmentPlan);
@@ -74,16 +83,15 @@ public class TreatmentPlanService {
             }
         }
         
-        // Calculate total cost if not provided
-        if (request.getTotalCost() == null) {
-            calculateAndUpdateCosts(saved);
-        }
-        
         log.info("Created treatment plan {} for patient {} by dentist {}", 
                 saved.getId(), saved.getPatientId(), saved.getDentistId());
         
         // Send notification to patient
-        sendTreatmentPlanNotification(saved);
+        try {
+            sendTreatmentPlanNotification(saved, "CREATED");
+        } catch (Exception e) {
+            log.warn("Failed to send treatment plan notification: {}", e.getMessage());
+        }
         
         return toResponse(saved);
     }
@@ -102,6 +110,13 @@ public class TreatmentPlanService {
         
         TreatmentPlan saved = treatmentPlanRepository.save(treatmentPlan);
         log.info("Accepted treatment plan {}", planId);
+        
+        // Send notification
+        try {
+            sendTreatmentPlanNotification(saved, "ACCEPTED");
+        } catch (Exception e) {
+            log.warn("Failed to send treatment plan notification: {}", e.getMessage());
+        }
         
         return toResponse(saved);
     }
@@ -138,19 +153,23 @@ public class TreatmentPlanService {
         TreatmentPlan saved = treatmentPlanRepository.save(treatmentPlan);
         log.info("Completed treatment plan {}", planId);
         
+        // Send notification
+        try {
+            sendTreatmentPlanNotification(saved, "COMPLETED");
+        } catch (Exception e) {
+            log.warn("Failed to send treatment plan notification: {}", e.getMessage());
+        }
+        
         return toResponse(saved);
     }
     
     @Transactional
     public TreatmentPlanResponse updateTreatmentPlanItemStatus(Integer planId, Integer itemId, String status) {
-        TreatmentPlan treatmentPlan = treatmentPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("Treatment plan not found"));
-        
         TreatmentPlanItem item = treatmentPlanItemRepository.findById(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("Treatment plan item not found"));
         
         if (!item.getTreatmentPlanId().equals(planId)) {
-            throw new IllegalArgumentException("Item does not belong to this treatment plan");
+            throw new IllegalArgumentException("Item does not belong to the specified treatment plan");
         }
         
         item.setStatus(status);
@@ -158,7 +177,22 @@ public class TreatmentPlanService {
         
         log.info("Updated treatment plan item {} status to {}", itemId, status);
         
-        return toResponse(treatmentPlan);
+        // Check if all items are completed
+        List<TreatmentPlanItem> allItems = treatmentPlanItemRepository
+                .findByTreatmentPlanIdOrderBySequenceOrder(planId);
+        boolean allCompleted = allItems.stream().allMatch(i -> "COMPLETED".equals(i.getStatus()));
+        
+        if (allCompleted) {
+            TreatmentPlan plan = treatmentPlanRepository.findById(planId).orElse(null);
+            if (plan != null && "IN_PROGRESS".equals(plan.getStatus())) {
+                plan.setStatus("COMPLETED");
+                plan.setCompletedAt(LocalDateTime.now());
+                treatmentPlanRepository.save(plan);
+                log.info("Auto-completed treatment plan {} as all items are completed", planId);
+            }
+        }
+        
+        return getTreatmentPlan(planId);
     }
     
     @Transactional(readOnly = true)
@@ -181,64 +215,32 @@ public class TreatmentPlanService {
         return plans.stream().map(this::toResponse).collect(Collectors.toList());
     }
     
-    private void calculateAndUpdateCosts(TreatmentPlan treatmentPlan) {
-        List<TreatmentPlanItem> items = treatmentPlanItemRepository
-                .findByTreatmentPlanIdOrderBySequenceOrder(treatmentPlan.getId());
-        
-        BigDecimal totalCost = items.stream()
-                .map(TreatmentPlanItem::getCost)
-                .filter(cost -> cost != null)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        treatmentPlan.setTotalCost(totalCost);
-        
-        if (treatmentPlan.getInsuranceCoverage() != null) {
-            treatmentPlan.setPatientCost(totalCost.subtract(treatmentPlan.getInsuranceCoverage()));
-        } else {
-            treatmentPlan.setPatientCost(totalCost);
-        }
-        
-        treatmentPlanRepository.save(treatmentPlan);
+    @Transactional(readOnly = true)
+    public List<TreatmentPlanResponse> getPlanVersions(Integer parentPlanId) {
+        List<TreatmentPlan> plans = treatmentPlanRepository.findPlanVersions(parentPlanId);
+        return plans.stream().map(this::toResponse).collect(Collectors.toList());
     }
     
-    private void sendTreatmentPlanNotification(TreatmentPlan treatmentPlan) {
-        try {
-            Map<String, Object> notificationRequest = new HashMap<>();
-            notificationRequest.put("userId", treatmentPlan.getPatientId());
-            notificationRequest.put("templateName", "treatment_plan_ready");
-            notificationRequest.put("type", "EMAIL");
-            
-            Map<String, String> templateVariables = new HashMap<>();
-            
-            try {
-                String patientName = authServiceClient.getUserFullName(treatmentPlan.getPatientId());
-                templateVariables.put("patient_name", patientName);
-            } catch (Exception e) {
-                log.warn("Failed to fetch patient name for notification: {}", e.getMessage());
-                templateVariables.put("patient_name", "Patient");
-            }
-            
-            try {
-                String dentistName = authServiceClient.getUserFullName(treatmentPlan.getDentistId());
-                templateVariables.put("dentist_name", dentistName);
-            } catch (Exception e) {
-                log.warn("Failed to fetch dentist name for notification: {}", e.getMessage());
-                templateVariables.put("dentist_name", "Dr. Dentist");
-            }
-            
-            notificationRequest.put("templateVariables", templateVariables);
-            
-            Map<String, Object> metadata = new HashMap<>();
-            metadata.put("treatment_plan_id", treatmentPlan.getId());
-            notificationRequest.put("metadata", metadata);
-            
-            notificationClient.sendNotification(notificationRequest);
-        } catch (Exception e) {
-            log.error("Failed to send treatment plan notification: {}", e.getMessage());
-        }
+    private void sendTreatmentPlanNotification(TreatmentPlan plan, String action) {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("type", "TREATMENT_PLAN_" + action);
+        notification.put("recipientId", plan.getPatientId());
+        notification.put("title", "Treatment Plan " + action);
+        notification.put("message", "Your treatment plan '" + plan.getPlanName() + "' has been " + action.toLowerCase());
+        notification.put("data", Map.of("treatmentPlanId", plan.getId()));
+        
+        notificationClient.sendNotification(notification);
     }
     
     private TreatmentPlanResponse toResponse(TreatmentPlan treatmentPlan) {
+        // Get treatment plan items
+        List<TreatmentPlanItem> items = treatmentPlanItemRepository
+                .findByTreatmentPlanIdOrderBySequenceOrder(treatmentPlan.getId());
+        
+        List<TreatmentPlanResponse.TreatmentPlanItemResponse> itemResponses = items.stream()
+                .map(this::toItemResponse)
+                .collect(Collectors.toList());
+        
         TreatmentPlanResponse response = TreatmentPlanResponse.builder()
                 .id(treatmentPlan.getId())
                 .patientId(treatmentPlan.getPatientId())
@@ -250,12 +252,15 @@ public class TreatmentPlanService {
                 .insuranceCoverage(treatmentPlan.getInsuranceCoverage())
                 .patientCost(treatmentPlan.getPatientCost())
                 .status(treatmentPlan.getStatus())
+                .version(treatmentPlan.getVersion())
+                .parentPlanId(treatmentPlan.getParentPlanId())
                 .createdAt(treatmentPlan.getCreatedAt())
                 .acceptedAt(treatmentPlan.getAcceptedAt())
                 .completedAt(treatmentPlan.getCompletedAt())
+                .items(itemResponses)
                 .build();
         
-        // Fetch names from user service
+        // Fetch names from services
         try {
             response.setPatientName(authServiceClient.getUserFullName(treatmentPlan.getPatientId()));
         } catch (Exception e) {
@@ -268,42 +273,36 @@ public class TreatmentPlanService {
             log.warn("Failed to fetch dentist name for id {}: {}", treatmentPlan.getDentistId(), e.getMessage());
         }
         
-        // Fetch clinic name
-        clinicRepository.findById(treatmentPlan.getClinicId()).ifPresent(clinic -> 
-                response.setClinicName(clinic.getName())
-        );
-        
-        // Fetch items
-        List<TreatmentPlanItem> items = treatmentPlanItemRepository
-                .findByTreatmentPlanIdOrderBySequenceOrder(treatmentPlan.getId());
-        
-        List<TreatmentPlanResponse.TreatmentPlanItemResponse> itemResponses = items.stream()
-                .map(item -> {
-                    TreatmentPlanResponse.TreatmentPlanItemResponse itemResponse = 
-                            TreatmentPlanResponse.TreatmentPlanItemResponse.builder()
-                                    .id(item.getId())
-                                    .serviceId(item.getServiceId())
-                                    .toothNumber(item.getToothNumber())
-                                    .description(item.getDescription())
-                                    .cost(item.getCost())
-                                    .status(item.getStatus())
-                                    .sequenceOrder(item.getSequenceOrder())
-                                    .notes(item.getNotes())
-                                    .build();
-                    
-                    // Fetch service name
-                    if (item.getServiceId() != null) {
-                        serviceRepository.findById(item.getServiceId()).ifPresent(service -> 
-                                itemResponse.setServiceName(service.getName())
-                        );
-                    }
-                    
-                    return itemResponse;
-                })
-                .collect(Collectors.toList());
-        
-        response.setItems(itemResponses);
+        try {
+            response.setClinicName(clinicServiceClient.getClinic(treatmentPlan.getClinicId()).getName());
+        } catch (Exception e) {
+            log.warn("Failed to fetch clinic name for id {}: {}", treatmentPlan.getClinicId(), e.getMessage());
+        }
         
         return response;
     }
-} 
+    
+    private TreatmentPlanResponse.TreatmentPlanItemResponse toItemResponse(TreatmentPlanItem item) {
+        TreatmentPlanResponse.TreatmentPlanItemResponse response = TreatmentPlanResponse.TreatmentPlanItemResponse.builder()
+                .id(item.getId())
+                .serviceId(item.getServiceId())
+                .toothNumber(item.getToothNumber())
+                .description(item.getDescription())
+                .cost(item.getCost())
+                .status(item.getStatus())
+                .sequenceOrder(item.getSequenceOrder())
+                .notes(item.getNotes())
+                .build();
+        
+        // Fetch service name
+        if (item.getServiceId() != null) {
+            try {
+                response.setServiceName(clinicServiceClient.getService(item.getServiceId()).getName());
+            } catch (Exception e) {
+                log.warn("Failed to fetch service name for id {}: {}", item.getServiceId(), e.getMessage());
+            }
+        }
+        
+        return response;
+    }
+}

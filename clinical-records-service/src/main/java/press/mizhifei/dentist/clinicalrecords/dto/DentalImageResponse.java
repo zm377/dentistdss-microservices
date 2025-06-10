@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.clinic.dto;
+package press.mizhifei.dentist.clinicalrecords.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,28 +18,28 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ClinicalNoteResponse {
+public class DentalImageResponse {
     private Long id;
-    private Long appointmentId;
     private Long patientId;
     private String patientName;
     private Long dentistId;
     private String dentistName;
     private Long clinicId;
     private String clinicName;
-    private String chiefComplaint;
-    private String examinationFindings;
-    private String diagnosis;
-    private String treatmentPerformed;
-    private String treatmentPlan;
-    private String prescriptions;
-    private String followUpInstructions;
-    private String aiAssistedNotes;
-    private String[] attachments;
-    private Boolean isDraft;
+    private Long clinicalNoteId;
+    private Long visitId;
+    private String gridfsFileId;
+    private String thumbnailGridfsId;
+    private String originalFilename;
+    private String contentType;
+    private Long fileSize;
+    private String imageType;
+    private String toothNumber;
+    private String description;
+    private String tags;
+    private Boolean isPrimary;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDateTime signedAt;
-    private Long signedBy;
-    private String signedByName;
-} 
+    private String downloadUrl;
+    private String thumbnailUrl;
+}

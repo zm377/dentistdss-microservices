@@ -1,0 +1,185 @@
+# =============================================================================
+# Clinical Records Service Configuration - Production Profile
+# =============================================================================
+
+server:
+  port: 8090
+
+spring:
+  application:
+    name: clinical-records-service
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/dentistdss}
+    username: dentistdss
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://mongo:27017/dentistdss_files}
+      database: dentistdss_files
+
+# =============================================================================
+# Service Discovery Configuration
+# =============================================================================
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 30
+  instance:
+    preferIpAddress: true
+    hostname: clinical-records-service
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration - Production Profile (DISABLED)
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework.cloud.openfeign: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN
+    org.springframework.data.mongodb: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/clinical-records-service.log
+    max-size: 100MB
+    max-history: 30
+
+# =============================================================================
+# Management & Actuator Configuration
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+      sla:
+        http.server.requests: 100ms, 500ms, 1s
+
+# =============================================================================
+# Feign Configuration
+# =============================================================================
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 30000
+        loggerLevel: basic
+        retryer:
+          period: 1000
+          maxPeriod: 5000
+          maxAttempts: 3
+      auth-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+      clinic-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+      notification-service:
+        connectTimeout: 5000
+        readTimeout: 15000
+  compression:
+    request:
+      enabled: true
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+
+# =============================================================================
+# Security Configuration
+# =============================================================================
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+# =============================================================================
+# File Upload Configuration
+# =============================================================================
+file:
+  upload:
+    max-file-size: 52428800  # 50MB
+    max-request-size: 104857600  # 100MB
+    allowed-image-types:
+      - image/jpeg
+      - image/png
+      - image/tiff
+      - image/bmp
+    thumbnail-width: 200
+    thumbnail-height: 200
+
+# =============================================================================
+# Application Specific Configuration
+# =============================================================================
+clinical-records:
+  service:
+    image-retention-days: 2555  # 7 years
+    note-auto-save-interval: 30  # seconds
+    max-note-versions: 10
+    cleanup:
+      old-images-days: 2555
+      batch-size: 100
