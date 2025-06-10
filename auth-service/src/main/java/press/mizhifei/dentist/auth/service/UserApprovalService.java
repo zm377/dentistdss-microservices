@@ -14,6 +14,8 @@ import press.mizhifei.dentist.auth.model.UserApprovalRequest;
 import press.mizhifei.dentist.auth.repository.ClinicRepository;
 import press.mizhifei.dentist.auth.repository.UserApprovalRequestRepository;
 import press.mizhifei.dentist.auth.repository.UserRepository;
+import press.mizhifei.dentist.auth.client.NotificationServiceClient;
+import press.mizhifei.dentist.auth.dto.NotificationEmailRequest;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -37,7 +39,7 @@ public class UserApprovalService {
     private final UserApprovalRequestRepository approvalRequestRepository;
     private final UserRepository userRepository;
     private final ClinicRepository clinicRepository;
-    private final EmailService emailService;
+    private final NotificationServiceClient notificationServiceClient;
 
     @Transactional
     public ApiResponse<ApprovalRequestResponse> createApprovalRequest(Long userId, String requestReason) {
@@ -229,10 +231,8 @@ public class UserApprovalService {
         templateVariables.put("role", requestedRole.toString());
 
         approvers.forEach(approver -> {
-            emailService.sendNotificationEmail(
-                    approver.getEmail(),
-                    "user_approval_request",
-                    templateVariables);
+            notificationServiceClient.sendNotificationEmail(
+                    new NotificationEmailRequest(approver.getEmail(), "user_approval_request", templateVariables));
         });
     }
 
@@ -243,10 +243,8 @@ public class UserApprovalService {
         templateVariables.put("status", approved ? "approved" : "rejected");
         templateVariables.put("reason", reviewNotes != null ? reviewNotes : "");
 
-        emailService.sendNotificationEmail(
-                user.getEmail(),
-                "user_approval_result",
-                templateVariables);
+        notificationServiceClient.sendNotificationEmail(
+                new NotificationEmailRequest(user.getEmail(), "user_approval_result", templateVariables));
     }
 
     private ApprovalRequestResponse toResponse(UserApprovalRequest request) {

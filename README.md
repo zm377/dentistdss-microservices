@@ -1,10 +1,22 @@
 # Backend - DentistDSS Microservices
 
-This project is a microservices-based application for a Dentist Decision Support System.
+This project is a microservices-based application for a Dentist Decision Support System with **centralized JWT authentication** architecture.
 
 Try on our website: [https://dentist.mizhifei.press/](https://dentist.mizhifei.press/)
 
 This project codebase is managed by git on GitHub: [https://github.com/zm377/dentistdss-microservices](https://github.com/zm377/dentistdss-microservices)
+
+## 🏗️ Architecture Overview
+
+The system implements a **centralized security architecture** where the API Gateway handles all JWT token validation and authorization, while individual microservices focus purely on business logic. This follows the **Single Responsibility Principle** and provides better security, maintainability, and scalability.
+
+### Key Architecture Benefits
+- ✅ **Centralized Security**: Single point of JWT validation and authorization
+- ✅ **Clean Separation**: Business services focus on domain logic only
+- ✅ **Better Maintainability**: Security policies managed in one location
+- ✅ **Enhanced Security**: Consistent authentication across all services
+- ✅ **Scalability**: Independent service deployment without security concerns
+
 ## Services Architecture
 
 The system consists of the following microservices:
@@ -55,28 +67,45 @@ The system consists of the following microservices:
      - Provides load balancing across multiple service instances
      - Offers a web UI for monitoring service status
 
-5. **API Gateway**
-   - **Purpose**: Single entry point for all client requests with security
-   - **Port**: 443 (HTTPS)
-   - **Technology**: Spring Cloud Gateway
-   - **Features**:
+5. **API Gateway** 🚪
+   - **Purpose**: Centralized security hub and single entry point for all client requests
+   - **Port**: 443 (HTTPS) / 8080 (Development)
+   - **Technology**: Spring Cloud Gateway with Spring Security OAuth2
+   - **Security Features**:
+     - **Centralized JWT Token Validation**: Validates all JWT tokens using JWKS from auth-service
+     - **Role-Based Access Control**: Enforces permissions based on user roles (SYSTEM_ADMIN, CLINIC_ADMIN, RECEPTIONIST, DENTIST, PATIENT)
+     - **Clinic-Based Filtering**: Restricts CLINIC_ADMIN users to their own clinic data
+     - **User Context Forwarding**: Extracts user information and forwards via HTTP headers to downstream services
+     - **Public Endpoint Management**: Configures endpoints that don't require authentication
+   - **Routing Features**:
      - Routes requests to appropriate microservices
      - Implements TLS/SSL for secure HTTPS communication
-     - Handles authentication and authorization
      - Provides rate limiting and request filtering
      - Enables CORS for frontend applications
+   - **HTTP Headers Forwarded**:
+     - `X-User-ID`: User identifier
+     - `X-User-Email`: User email address
+     - `X-User-Roles`: Comma-separated user roles
+     - `X-Clinic-ID`: User's clinic identifier (for clinic-based filtering)
 
 ### Core Business Services
 
-6. **Auth Service**
-   - **Purpose**: Handles user authentication and session management
+6. **Auth Service** 🔐
+   - **Purpose**: Centralized authentication and user management (JWT token issuance only)
    - **Port**: 8081
+   - **Architecture Role**: Issues JWT tokens; validation handled by API Gateway
    - **Features**:
      - User registration with email verification
-     - Login/logout functionality
+     - Login/logout functionality with JWT token issuance
      - Password management (reset, change)
-     - JWT token generation and validation
-     - Role-based access control (Patient, Dentist, Receptionist, Admin)
+     - **JWT Token Generation**: Creates signed JWT tokens with user context
+     - **JWKS Endpoint**: Provides public keys for token validation (`/auth/oauth2/jwks`)
+     - Role and clinic assignment management
+     - User profile management
+   - **Security Model**:
+     - Issues JWT tokens containing user ID, email, roles, and clinic ID
+     - API Gateway validates tokens using JWKS endpoint
+     - No longer handles request-level authentication (delegated to API Gateway)
 
 7. **OAuth Service**
    - **Purpose**: Provides OAuth2 authentication with external providers
@@ -87,25 +116,36 @@ The system consists of the following microservices:
      - Token management and refresh
      - Secure third-party authentication flow
 
-8. **Clinic Service**
+8. **Clinic Service** 🏥
    - **Purpose**: Manages dental clinic operations and data
    - **Port**: 8083
+   - **Security Model**: Header-based authentication (no JWT validation)
    - **Features**:
      - Clinic registration and management
      - Staff management (Dentists, Receptionists)
      - Clinic profile and settings
      - Operating hours and availability
      - Service offerings and pricing
+     - Appointment management with role-based access
+   - **Authentication**:
+     - Receives user context via HTTP headers from API Gateway
+     - Uses `UserContextUtil` for extracting user information
+     - No direct JWT token handling or security configuration
 
-9. **Patient Service**
+9. **Patient Service** 👥
    - **Purpose**: Handles patient-related operations
    - **Port**: 8085
+   - **Security Model**: Header-based authentication (no JWT validation)
    - **Features**:
      - Patient profile management
      - Medical history tracking
      - Appointment booking and management
      - Treatment history and records
      - Patient-dentist communication
+   - **Authentication**:
+     - Receives user context via HTTP headers from API Gateway
+     - Uses `UserContextUtil` for extracting user information
+     - No direct JWT token handling or security configuration
 
 10. **System Service**
     - **Purpose**: Manages system-wide configurations and operations
@@ -119,9 +159,10 @@ The system consists of the following microservices:
 
 ### Communication Services
 
-11. **Notification Service**
+11. **Notification Service** 📧
     - **Purpose**: Handles all notification and communication features
     - **Port**: 8088
+    - **Security Model**: Header-based authentication (no JWT validation)
     - **Features**:
       - Multi-channel notifications (Email, SMS, Push, In-App)
       - Template-based notification system with variable substitution
@@ -131,22 +172,32 @@ The system consists of the following microservices:
       - Asynchronous notification processing
       - Integration with other services via Feign clients
       - Notification templates management
+    - **Authentication**:
+      - Receives user context via HTTP headers from API Gateway
+      - Uses `UserContextUtil` for extracting user information
+      - No direct JWT token handling or security configuration
 
 ### AI and Analytics Services
 
-12. **GenAI Service**
+12. **GenAI Service** 🤖
     - **Purpose**: Provides AI-powered chatbot and decision support features
     - **Port**: 8084
     - **Technology**: Spring AI with OpenAI integration
+    - **Security Model**: Mixed (public endpoints + header-based authentication)
     - **Features**:
       - Three specialized AI chatbots:
-        - Help Desk Bot (`/api/genai/chatbot/help`) - Public access for general inquiries
-        - Receptionist Bot (`/api/genai/chatbot/receptionist`) - Appointment scheduling assistance
-        - AI Dentist Bot (`/api/genai/chatbot/aidentist`) - Medical diagnosis and treatment guidance
+        - Help Desk Bot (`/api/genai/chatbot/help`) - **Public access** for general inquiries
+        - Receptionist Bot (`/api/genai/chatbot/receptionist`) - **Public access** for appointment scheduling
+        - AI Dentist Bot (`/api/genai/chatbot/aidentist`) - **Public access** for medical guidance
+        - Documentation Summarizer (`/api/genai/chatbot/documentation/summarize`) - **Public access**
       - Conversation history tracking in MongoDB
       - Rate limiting (10,000 tokens per 3 minutes per session)
       - Integration with patient records for personalized responses
       - Streaming API for real-time chat interactions
+    - **Authentication**:
+      - Public endpoints configured in API Gateway (no authentication required)
+      - Protected endpoints receive user context via HTTP headers
+      - No direct JWT token handling or security configuration
 
 13. **Audit Service**
     - **Purpose**: Tracks and logs all system activities for compliance
@@ -314,16 +365,49 @@ The project includes several scripts to help with development and deployment:
 ./start-local.sh       # Start all services locally
 ./stop-local.sh         # Stop local services
 
-# Docker development  
+# Docker development
 ./start-docker.sh       # Start all services in Docker
 ./stop-docker.sh        # Stop Docker services
 ./service-status.sh     # Check service status
+
+# Security testing
+./test-gateway-security.sh  # Test API Gateway security features
 
 # Production deployment
 ./build-and-push.sh     # Build and push latest images
 ./build-and-push.sh v1.2.3  # Build and push with version tag
 ./deploy.sh             # Deploy latest to production
 ./deploy.sh v1.2.3      # Deploy specific version
+```
+
+### Testing API Gateway Security
+
+To test the centralized JWT authentication system:
+
+```bash
+# Test the security implementation
+chmod +x test-gateway-security.sh
+./test-gateway-security.sh
+```
+
+This script tests:
+- ✅ Public endpoints (should return 200)
+- ✅ Protected endpoints without token (should return 401)
+- ✅ Protected endpoints with invalid token (should return 401)
+- ✅ API Gateway health check (should return 200)
+
+**Manual Testing Examples:**
+
+```bash
+# Test public endpoint (no authentication required)
+curl http://localhost:8080/api/clinic/list/all
+
+# Test protected endpoint without token (should return 401)
+curl http://localhost:8080/api/clinic/1/patients
+
+# Test protected endpoint with valid JWT token
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     http://localhost:8080/api/clinic/1/patients
 ```
 
 ## Service Endpoints
@@ -361,10 +445,129 @@ The project includes several scripts to help with development and deployment:
   - Database: ******
   - Username: ******
 
-## Security
+## 🔒 Security Architecture
 
-The API Gateway is configured with TLS/SSL certificates for secure HTTPS communication. 
-All internal service communication happens within a Docker network.
+### Centralized JWT Authentication
+
+The system implements a **centralized security architecture** where the API Gateway serves as the single point of authentication and authorization:
+
+#### Security Flow
+```
+Client Request → API Gateway → JWT Validation → Role Check → Forward with Headers → Business Service
+```
+
+#### Component Responsibilities
+
+**🚪 API Gateway (Security Hub)**
+- Validates JWT token signature using JWKS from auth-service
+- Extracts user context (ID, email, roles, clinic ID) from JWT payload
+- Enforces role-based access control per endpoint
+- Applies clinic-based filtering for CLINIC_ADMIN users
+- Forwards authenticated requests with user context headers
+- Rejects unauthorized requests with proper HTTP status codes (401/403)
+
+**🔐 Auth Service (Token Issuer)**
+- Issues signed JWT tokens containing user information
+- Provides JWKS endpoint for token validation
+- Manages user authentication (login/signup)
+- Handles user management and role assignment
+- **Does not validate tokens** (delegated to API Gateway)
+
+**🏥 Business Services (Header-Based Auth)**
+- Extract user context from HTTP headers forwarded by API Gateway
+- Use `UserContextUtil` classes for user information access
+- Focus purely on business logic without security concerns
+- **No JWT token handling or security configuration**
+
+#### Role-Based Access Control
+
+| Role | Access Level | Clinic Filtering | Example Endpoints |
+|------|-------------|------------------|-------------------|
+| `SYSTEM_ADMIN` | All endpoints | No filtering | All APIs |
+| `CLINIC_ADMIN` | Clinic-specific | Own clinic only | `/api/clinic/{id}/patients` |
+| `RECEPTIONIST` | Clinic-specific | Own clinic only | `/api/clinic/{id}/patients` |
+| `DENTIST` | Clinical data | Clinic-based | `/api/patient/*` |
+| `PATIENT` | Own records | Own data only | `/api/patient/profile` |
+
+#### Public Endpoints (No Authentication Required)
+
+**Authentication:**
+- `POST /api/auth/login` - User login
+- `POST /api/auth/signup` - User registration
+- `GET /api/auth/oauth2/jwks` - JWT validation keys
+
+**Clinic Information:**
+- `GET /api/clinic/list/all` - Public clinic listing
+- `GET /api/clinic/search` - Public clinic search
+- `POST /api/clinic` - Clinic registration
+
+**AI Chatbots:**
+- `POST /api/genai/chatbot/help` - General help chatbot
+- `POST /api/genai/chatbot/triage` - Medical triage assistance
+- `POST /api/genai/chatbot/receptionist` - Appointment scheduling
+- `POST /api/genai/chatbot/aidentist` - AI dentist consultation
+
+**System:**
+- `GET /actuator/health` - Health checks
+- `GET /v3/api-docs` - OpenAPI documentation (development only)
+
+#### User Context Headers
+
+The API Gateway forwards user information to downstream services via HTTP headers:
+
+```http
+X-User-ID: 12345
+X-User-Email: user@example.com
+X-User-Roles: CLINIC_ADMIN,DENTIST
+X-Clinic-ID: 67890
+```
+
+#### TLS/SSL Security
+
+- API Gateway configured with TLS/SSL certificates for secure HTTPS communication
+- All internal service communication happens within a secure Docker network
+- Production deployment uses HTTPS on port 443
+
+### 📚 Architecture Documentation
+
+For detailed information about the centralized JWT authentication architecture:
+
+- **[ARCHITECTURE_GUIDE.md](ARCHITECTURE_GUIDE.md)** - Comprehensive architecture guide with implementation details
+- **[REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)** - Summary of the refactoring process and benefits achieved
+
+### 🔧 Development Guide for Security
+
+#### Adding New Protected Endpoints
+
+1. **Define authorization rules** in `api-gateway/src/main/java/.../JwtAuthenticationFilter.java`
+2. **Extract user context** in your service controller using `UserContextUtil`
+
+```java
+@RestController
+public class MyController {
+
+    @GetMapping("/my-endpoint")
+    public ResponseEntity<?> myEndpoint(HttpServletRequest request) {
+        String userId = UserContextUtil.getUserId(request);
+        List<String> roles = UserContextUtil.getUserRoles(request);
+        Long clinicId = UserContextUtil.getClinicIdAsLong(request);
+
+        // Your business logic here
+    }
+}
+```
+
+#### Adding Public Endpoints
+
+Add the endpoint pattern to `PUBLIC_ENDPOINTS` in `JwtAuthenticationFilter.java`:
+
+```java
+private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
+    "/api/auth/",
+    "/api/clinic/list/all",
+    "/api/your-new-public-endpoint"  // Add here
+);
+```
 
 ## Development
 
@@ -432,6 +635,15 @@ Use the provided script:
 - **Logs**: Local development logs are in `logs/` directory, Docker logs via `docker-compose logs -f`
 - **Ports**: All services use the same ports in both local and Docker modes (see Service Endpoints section)
 
+#### Security Development Notes
+
+- **API Gateway**: Only service that handles JWT tokens and security
+- **Business Services**: Use `UserContextUtil` to extract user information from headers
+- **Testing**: Use `./test-gateway-security.sh` to verify security implementation
+- **Debugging**: Check API Gateway logs for authentication/authorization issues
+- **New Endpoints**: Add authorization rules in `JwtAuthenticationFilter.java`
+- **Public Endpoints**: Configure in `PUBLIC_ENDPOINTS` set for no-auth access
+
 ## Building & Publishing Production Images
 
 The repository provides an automated script to build and publish multi-service Docker images targeting **linux/amd64**. Each image is tagged by service name and an optional version:
@@ -466,4 +678,32 @@ The script will:
 3. Stop and remove existing service containers (excluding the **postgres** container so your data is preserved).
 4. Start the fresh containers in detached mode.
 
-> Note: The PostgreSQL database runs in its own persistent container and volume; deployments never rebuild or replace it automatically. 
+> Note: The PostgreSQL database runs in its own persistent container and volume; deployments never rebuild or replace it automatically.
+
+## 🎯 Architecture Benefits
+
+The centralized JWT authentication architecture provides significant improvements over traditional distributed security:
+
+### Before Refactoring
+- ❌ JWT validation scattered across multiple services
+- ❌ Inconsistent security implementations
+- ❌ Tight coupling between business logic and security
+- ❌ Difficult to maintain and update security policies
+- ❌ Security vulnerabilities due to implementation inconsistencies
+
+### After Refactoring
+- ✅ **Single Point of Security**: All JWT validation centralized in API Gateway
+- ✅ **Consistent Enforcement**: Uniform security policies across all services
+- ✅ **Clean Separation**: Business services focus purely on domain logic
+- ✅ **Easy Maintenance**: Security updates only require API Gateway changes
+- ✅ **Better Scalability**: Services can be deployed independently without security concerns
+- ✅ **Enhanced Security**: Reduced attack surface and consistent token validation
+- ✅ **Developer Productivity**: Faster development with header-based authentication
+
+### Performance Benefits
+- Reduced JWT parsing overhead in business services
+- Faster service startup times (no security configuration)
+- Better resource utilization (security logic in one place)
+- Improved caching of authentication decisions
+
+This architecture follows industry best practices and provides a solid foundation for scaling the microservices ecosystem.

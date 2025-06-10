@@ -36,12 +36,6 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks
-
 eureka:
   client:
     serviceUrl:
@@ -61,3 +55,12 @@ springdoc:
 logging:
   level:
     press.mizhifei.dentist: DEBUG
+
+# App Configuration
+app:
+  email-verification:
+    token-expiry-minutes: 43200 # 30 days in minutes
+    code-expiry-minutes: 10 # 10 minutes in minutes
+    base-url: ${BASE_URL:http://localhost:3000}
+  email:
+    from-email: ${MAIL_USERNAME}

@@ -29,6 +29,8 @@ import press.mizhifei.dentist.auth.repository.ClinicRepository;
 import press.mizhifei.dentist.auth.repository.UserRepository;
 import press.mizhifei.dentist.auth.security.JwtTokenProvider;
 import press.mizhifei.dentist.auth.security.UserPrincipal;
+import press.mizhifei.dentist.auth.client.NotificationServiceClient;
+import press.mizhifei.dentist.auth.dto.VerificationEmailRequest;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -52,7 +54,7 @@ public class AuthService {
     private final ClinicRepository clinicRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
-    private final EmailService emailService;
+    private final NotificationServiceClient notificationServiceClient;
     private final UserApprovalService userApprovalService;
 
     @Value("${app.email-verification.token-expiry-minutes}")
@@ -164,9 +166,8 @@ public class AuthService {
         // savedUser.getEmail(),
         // emailVerificationToken
         // );
-        emailService.sendVerificationCode(
-                savedUser.getEmail(),
-                verificationCode);
+        notificationServiceClient.sendVerificationEmail(
+                new VerificationEmailRequest(savedUser.getEmail(), verificationCode, "code"));
 
         return ApiResponse
                 .successMessage("User registered successfully. Please check your email to complete registration.");
@@ -226,9 +227,8 @@ public class AuthService {
         }
 
         // Send verification code email
-        emailService.sendVerificationCode(
-                savedUser.getEmail(),
-                verificationCode);
+        notificationServiceClient.sendVerificationEmail(
+                new VerificationEmailRequest(savedUser.getEmail(), verificationCode, "code"));
 
         // Get the clinic admin
         // Optional<Clinic> clinic = clinicRepository.findById(signUpStaffRequest.getClinicId());
@@ -333,9 +333,8 @@ public class AuthService {
         }
 
         // Send verification code email to clinic admin
-        emailService.sendVerificationCode(
-                clinicAdmin.getEmail(),
-                clinicAdmin.getVerificationCode());
+        notificationServiceClient.sendVerificationEmail(
+                new VerificationEmailRequest(clinicAdmin.getEmail(), clinicAdmin.getVerificationCode(), "code"));
 
         // update the clinic admin's clinic info
         clinicAdmin.setClinicId(clinic.getId());
@@ -373,9 +372,8 @@ public class AuthService {
         user.setVerificationCode(verificationCode);
         user.setVerificationCodeExpiry(codeExpiry);
         userRepository.save(user);
-        emailService.sendVerificationCode(
-                user.getEmail(),
-                verificationCode);
+        notificationServiceClient.sendVerificationEmail(
+                new VerificationEmailRequest(user.getEmail(), verificationCode, "code"));
         return ApiResponse.successMessage("Verification code sent successfully");
     }
 

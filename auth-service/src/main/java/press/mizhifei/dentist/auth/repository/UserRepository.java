@@ -8,7 +8,6 @@ import press.mizhifei.dentist.auth.model.User;
 import press.mizhifei.dentist.auth.model.AuthProvider;
 import press.mizhifei.dentist.auth.model.Role;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 

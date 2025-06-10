@@ -21,11 +21,6 @@ spring:
       chat:
         options:
           model: gpt-4.1-nano-2025-04-14
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks # Default to localhost:8081 for auth-service
 
 eureka:
   client:
@@ -48,7 +43,4 @@ springdoc:
 logging:
   level:
     press.mizhifei.dentist: DEBUG
-    org.springframework.security: TRACE
-    org.springframework.security.oauth2: TRACE
-    org.springframework.security.web: TRACE
     org.springframework: DEBUG

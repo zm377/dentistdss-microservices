@@ -12,12 +12,6 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
-
 
 eureka:
   client:

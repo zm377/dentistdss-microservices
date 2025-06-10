@@ -19,7 +19,6 @@ import press.mizhifei.dentist.auth.repository.UserRepository;
 import press.mizhifei.dentist.auth.security.JwtTokenProvider;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 /**

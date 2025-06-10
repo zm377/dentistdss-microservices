@@ -16,6 +16,11 @@ spring:
     name: api-gateway
   config:
     import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
   cloud:
     gateway:
       # =============================================================================
@@ -198,3 +203,12 @@ management:
       show-details: when-authorized  # Restricted health details
     gateway:
       access: none # Disable gateway actuator in production
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration - DISABLED for production
+# =============================================================================
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

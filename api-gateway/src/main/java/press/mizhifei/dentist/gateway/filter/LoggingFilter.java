@@ -32,24 +32,24 @@ public class LoggingFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         ServerHttpResponse response = exchange.getResponse();
-        
+
         String timestamp = LocalDateTime.now().format(formatter);
         String method = request.getMethod().toString();
         String path = request.getPath().toString();
         String remoteAddress = getClientIpAddress(request);
         String userAgent = request.getHeaders().getFirst("User-Agent");
-        
+
         // Log incoming request
-        logger.info("INCOMING REQUEST - {} | {} {} | IP: {} | User-Agent: {}", 
-                   timestamp, method, path, remoteAddress, userAgent);
-        
+        logger.info("INCOMING REQUEST - {} | {} {} | IP: {} | User-Agent: {}",
+                timestamp, method, path, remoteAddress, userAgent);
         // Continue with the filter chain and log response
         return chain.filter(exchange).then(Mono.fromRunnable(() -> {
-            int statusCode = response.getStatusCode() != null ? response.getStatusCode().value() : 0;
+            org.springframework.http.HttpStatusCode statusCodeObj = response.getStatusCode();
+            int statusCode = statusCodeObj != null ? statusCodeObj.value() : 0;
             String responseTimestamp = LocalDateTime.now().format(formatter);
-            
-            logger.info("OUTGOING RESPONSE - {} | {} {} | Status: {} | IP: {}", 
-                       responseTimestamp, method, path, statusCode, remoteAddress);
+
+            logger.info("OUTGOING RESPONSE - {} | {} {} | Status: {} | IP: {}",
+                    responseTimestamp, method, path, statusCode, remoteAddress);
         }));
     }
 
@@ -66,13 +66,16 @@ public class LoggingFilter implements GlobalFilter, Ordered {
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
             return xForwardedFor.split(",")[0].trim();
         }
-        
+
         String xRealIp = request.getHeaders().getFirst("X-Real-IP");
         if (xRealIp != null && !xRealIp.isEmpty()) {
             return xRealIp;
         }
-        
-        return request.getRemoteAddress() != null ? 
-               request.getRemoteAddress().getAddress().getHostAddress() : "unknown";
+
+        java.net.InetSocketAddress remoteAddress = request.getRemoteAddress();
+        if (remoteAddress != null && remoteAddress.getAddress() != null) {
+            return remoteAddress.getAddress().getHostAddress();
+        }
+        return "unknown";
     }
 }

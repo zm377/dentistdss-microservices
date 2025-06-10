@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
-import press.mizhifei.dentist.clinic.annotation.RequireRoles;
 import press.mizhifei.dentist.clinic.client.AuthServiceClient;
 import press.mizhifei.dentist.clinic.dto.ApiResponse;
 import press.mizhifei.dentist.clinic.dto.ClinicResponse;
@@ -24,13 +23,10 @@ import press.mizhifei.dentist.clinic.dto.ClinicUpdateRequest;
 import press.mizhifei.dentist.clinic.dto.PatientWithAppointmentResponse;
 import press.mizhifei.dentist.clinic.dto.UserDetailsResponse;
 import press.mizhifei.dentist.clinic.dto.UserResponse;
-import press.mizhifei.dentist.clinic.model.Role;
-import press.mizhifei.dentist.clinic.security.JwtTokenProvider;
 import press.mizhifei.dentist.clinic.service.ClinicService;
-import press.mizhifei.dentist.clinic.util.JwtUtil;
+import press.mizhifei.dentist.clinic.util.UserContextUtil;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -47,7 +43,6 @@ public class ClinicController {
 
     private final ClinicService clinicService;
     private final AuthServiceClient authServiceClient;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/list/all")
     public ResponseEntity<ApiResponse<List<ClinicResponse>>> listAllEnabledClinics() {
@@ -82,37 +77,30 @@ public class ClinicController {
     }
 
     @PutMapping("/{id}")
-    @RequireRoles({Role.CLINIC_ADMIN})
     public ResponseEntity<ApiResponse<ClinicResponse>> updateClinic(
             @PathVariable Long id,
             @Valid @RequestBody ClinicUpdateRequest request,
             HttpServletRequest httpRequest) {
         try {
-            // Extract JWT token from request
-            String jwt = JwtUtil.getJwtFromRequest(httpRequest);
-            if (!StringUtils.hasText(jwt)) {
+            // Extract user context from headers (forwarded by API Gateway)
+            String userEmail = UserContextUtil.getUserEmail(httpRequest);
+            String userId = UserContextUtil.getUserId(httpRequest);
+
+            if (!StringUtils.hasText(userEmail)) {
                 return ResponseEntity.status(401)
-                        .body(ApiResponse.error("Authentication token is required"));
+                        .body(ApiResponse.error("Authentication required"));
             }
 
-            // Extract user email and roles from JWT
-            String userEmail = jwtTokenProvider.getEmailFromJWT(jwt);
-            String rolesString = jwtTokenProvider.getRolesFromJWT(jwt);
-
-            log.debug("User {} with roles {} requesting to update clinic {}", userEmail, rolesString, id);
-
-            // Get user details to validate clinic access
-            UserDetailsResponse userDetails;
-            try {
-                userDetails = authServiceClient.getUserDetailsByEmail(userEmail);
-            } catch (Exception e) {
-                log.error("Failed to fetch user details for email {}: {}", userEmail, e.getMessage());
-                return ResponseEntity.status(500)
-                        .body(ApiResponse.error("Failed to validate user permissions"));
+            // Check if user has CLINIC_ADMIN role
+            if (!UserContextUtil.isClinicAdmin(httpRequest)) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.error("CLINIC_ADMIN role required"));
             }
+
+            log.debug("User {} requesting to update clinic {}", userEmail, id);
 
             // Validate clinic access for CLINIC_ADMIN users
-            if (userDetails.clinicId != null && !userDetails.clinicId.equals(id)) {
+            if (!UserContextUtil.hasClinicAccess(httpRequest, id)) {
                 return ResponseEntity.status(403)
                         .body(ApiResponse.error("Access denied. You can only update your own clinic."));
             }
@@ -136,54 +124,29 @@ public class ClinicController {
      * Applies clinic-based filtering for CLINIC_ADMIN and RECEPTIONIST users
      */
     @GetMapping("/{clinicId}/patients")
-    @RequireRoles({Role.CLINIC_ADMIN, Role.RECEPTIONIST})
     public ResponseEntity<ApiResponse<List<PatientWithAppointmentResponse>>> getClinicPatients(
             @PathVariable Long clinicId, HttpServletRequest request) {
         try {
-            // Extract JWT token from request
-            String jwt = JwtUtil.getJwtFromRequest(request);
-            if (!StringUtils.hasText(jwt)) {
+            // Extract user context from headers (forwarded by API Gateway)
+            String userEmail = UserContextUtil.getUserEmail(request);
+
+            if (!StringUtils.hasText(userEmail)) {
                 return ResponseEntity.status(401)
-                        .body(ApiResponse.error("Authentication token is required"));
+                        .body(ApiResponse.error("Authentication required"));
             }
 
-            // Extract user information from token
-            String userEmail = jwtTokenProvider.getEmailFromJWT(jwt);
-            String rolesString = jwtTokenProvider.getRolesFromJWT(jwt);
+            log.debug("User {} requesting patients for clinic {}", userEmail, clinicId);
 
-            if (!StringUtils.hasText(userEmail) || !StringUtils.hasText(rolesString)) {
-                return ResponseEntity.status(401)
-                        .body(ApiResponse.error("Invalid authentication token"));
-            }
-
-            log.debug("User {} with roles {} requesting patients for clinic {}", userEmail, rolesString, clinicId);
-
-            // Get user details to validate clinic access and roles
-            UserDetailsResponse userDetails;
-            try {
-                userDetails = authServiceClient.getUserDetailsByEmail(userEmail);
-            } catch (Exception e) {
-                log.error("Failed to fetch user details for email {}: {}", userEmail, e.getMessage());
-                return ResponseEntity.status(500)
-                        .body(ApiResponse.error("Failed to validate user permissions"));
-            }
-
-            // Check if user has required roles (use roles from user details for accuracy)
-            Set<String> userRoles = userDetails.roles != null ? userDetails.roles : Set.of();
-            boolean hasClinicAdmin = userRoles.contains(Role.CLINIC_ADMIN.name());
-            boolean hasReceptionist = userRoles.contains(Role.RECEPTIONIST.name());
-
-            if (!hasClinicAdmin && !hasReceptionist) {
+            // Check if user has required roles
+            if (!UserContextUtil.isClinicStaff(request)) {
                 return ResponseEntity.status(403)
-                        .body(ApiResponse.error("Insufficient permissions. CLINIC_ADMIN or RECEPTIONIST role required."));
+                        .body(ApiResponse.error("CLINIC_ADMIN or RECEPTIONIST role required"));
             }
 
             // Validate clinic access for CLINIC_ADMIN and RECEPTIONIST users
-            if ((hasClinicAdmin || hasReceptionist) && userDetails.clinicId != null) {
-                if (!userDetails.clinicId.equals(clinicId)) {
-                    return ResponseEntity.status(403)
-                            .body(ApiResponse.error("Access denied. You can only view patients from your own clinic."));
-                }
+            if (!UserContextUtil.hasClinicAccess(request, clinicId)) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.error("Access denied. You can only view patients from your own clinic."));
             }
 
             // Get patients sorted by appointments

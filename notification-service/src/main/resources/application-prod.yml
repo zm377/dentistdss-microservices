@@ -33,12 +33,6 @@ spring:
           starttls:
             enable: true
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
-
 # OpenAPI/SpringDoc Configuration - DISABLED for production
 springdoc:
   api-docs:
@@ -58,3 +52,12 @@ logging:
     press.mizhifei.dentist: INFO
     org.springframework: INFO
     root: INFO
+
+# App Configuration
+app:
+  email-verification:
+    token-expiry-minutes: 43200 # 30 days in minutes
+    code-expiry-minutes: 10 # 10 minutes in minutes
+    base-url: ${BASE_URL:https://dentist.mizhifei.press}
+  email:
+    from-email: ${MAIL_USERNAME}
