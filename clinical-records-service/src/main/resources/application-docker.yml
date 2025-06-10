@@ -156,12 +156,6 @@ feign:
 # =============================================================================
 # File Upload Configuration
 # =============================================================================
-spring:
-  servlet:
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 100MB
-      enabled: true
 
 file:
   upload:
@@ -187,7 +181,3 @@ clinical-records:
     cleanup:
       old-images-days: 2555
       batch-size: 100
-    notifications:
-      enabled: true
-      treatment-plan-events: true
-      clinical-note-events: false

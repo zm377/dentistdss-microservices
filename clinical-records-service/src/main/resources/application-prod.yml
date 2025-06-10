@@ -37,7 +37,7 @@ spring:
         batch_versioned_data: true
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://mongo:27017/dentistdss_files}
+      uri: ${MONGODB_URI:mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss_files?authSource=admin}
       database: dentistdss
 
 # =============================================================================
@@ -150,12 +150,6 @@ feign:
 # =============================================================================
 # Security Configuration
 # =============================================================================
-server:
-  error:
-    include-message: never
-    include-binding-errors: never
-    include-stacktrace: never
-    include-exception: false
 
 # =============================================================================
 # File Upload Configuration
@@ -169,6 +163,7 @@ file:
       - image/png
       - image/tiff
       - image/bmp
+      - image/webp
     thumbnail-width: 200
     thumbnail-height: 200
 
