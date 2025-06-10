@@ -176,11 +176,11 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # Patient Service Documentation
-            - id: patient-service-openapi
-              uri: lb://patient-service
+            # User Profile Service Documentation
+            - id: user-profile-service-openapi
+              uri: lb://user-profile-service
               predicates:
-                - Path=/patient-service/v3/api-docs
+                - Path=/user-profile-service/v3/api-docs
               filters:
                 - StripPrefix=1
 
@@ -255,8 +255,8 @@ springdoc:
         url: /clinic-service/v3/api-docs
       - name: genai-service
         url: /genai-service/v3/api-docs
-      - name: patient-service
-        url: /patient-service/v3/api-docs
+      - name: user-profile-service
+        url: /user-profile-service/v3/api-docs
       - name: system-service
         url: /system-service/v3/api-docs
       - name: audit-service
