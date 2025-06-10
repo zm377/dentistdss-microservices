@@ -1,0 +1,193 @@
+# =============================================================================
+# Clinical Records Service Configuration - Docker Profile
+# =============================================================================
+
+server:
+  port: 8090
+
+spring:
+  application:
+    name: clinical-records-service
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/dentistdss}
+    username: dentistdss
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 3
+      idle-timeout: 300000
+      connection-timeout: 20000
+      leak-detection-threshold: 60000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss_files?authSource=admin}
+      database: dentistdss_files
+
+# =============================================================================
+# Service Discovery Configuration
+# =============================================================================
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka}
+    fetch-registry: true
+    register-with-eureka: true
+    registry-fetch-interval-seconds: 30
+  instance:
+    preferIpAddress: true
+    hostname: clinical-records-service
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# =============================================================================
+# OpenAPI/SpringDoc Configuration - Docker Profile
+# =============================================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+    groups:
+      enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    config-url: /v3/api-docs/swagger-config
+  info:
+    title: Clinical Records Service API
+    description: API for managing clinical records, treatment plans, service visits, and dental images
+    version: 1.0.0
+    contact:
+      name: DentistDSS Development Team
+      email: zm377@uowmail.edu.au
+    license:
+      name: MIT License
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework.cloud.openfeign: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    com.netflix.eureka: WARN
+    com.netflix.discovery: WARN
+    org.springframework.data.mongodb: INFO
+    com.mongodb: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =============================================================================
+# Management & Actuator Configuration
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+      sla:
+        http.server.requests: 100ms, 500ms, 1s
+
+# =============================================================================
+# Feign Configuration
+# =============================================================================
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 30000
+        loggerLevel: basic
+        retryer:
+          period: 1000
+          maxPeriod: 5000
+          maxAttempts: 3
+      auth-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+      clinic-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+      notification-service:
+        connectTimeout: 5000
+        readTimeout: 15000
+  compression:
+    request:
+      enabled: true
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+
+# =============================================================================
+# File Upload Configuration
+# =============================================================================
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+      enabled: true
+
+file:
+  upload:
+    max-file-size: 52428800  # 50MB
+    max-request-size: 104857600  # 100MB
+    allowed-image-types:
+      - image/jpeg
+      - image/png
+      - image/tiff
+      - image/bmp
+      - image/webp
+    thumbnail-width: 200
+    thumbnail-height: 200
+
+# =============================================================================
+# Application Specific Configuration
+# =============================================================================
+clinical-records:
+  service:
+    image-retention-days: 2555  # 7 years
+    note-auto-save-interval: 30  # seconds
+    max-note-versions: 10
+    cleanup:
+      old-images-days: 2555
+      batch-size: 100
+    notifications:
+      enabled: true
+      treatment-plan-events: true
+      clinical-note-events: false
