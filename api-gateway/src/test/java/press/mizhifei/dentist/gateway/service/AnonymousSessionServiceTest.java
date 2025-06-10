@@ -30,7 +30,6 @@ class AnonymousSessionServiceTest {
         // Then
         assertNotNull(sessionInfo);
         assertNotNull(sessionInfo.getSessionId());
-        assertNotNull(sessionInfo.getAnonymousId());
         assertFalse(sessionInfo.isAuthenticated());
         assertNull(sessionInfo.getUserId());
         assertNull(sessionInfo.getEmail());
@@ -39,17 +38,17 @@ class AnonymousSessionServiceTest {
     }
 
     @Test
-    void testGetOrCreateSession_ExistingAnonId() {
+    void testGetOrCreateSession_ExistingSessionId() {
         // Given
         SessionInfo firstSession = anonymousSessionService.getOrCreateSession(null);
-        String existingAnonId = firstSession.getAnonymousId();
+        String existingSessionId = firstSession.getSessionId();
 
         // When
-        SessionInfo secondSession = anonymousSessionService.getOrCreateSession(existingAnonId);
+        SessionInfo secondSession = anonymousSessionService.getOrCreateSession(existingSessionId);
 
         // Then
         assertNotNull(secondSession);
-        assertEquals(existingAnonId, secondSession.getAnonymousId());
+        assertEquals(existingSessionId, secondSession.getSessionId());
         assertEquals(firstSession.getSessionId(), secondSession.getSessionId());
     }
 
@@ -57,15 +56,15 @@ class AnonymousSessionServiceTest {
     void testLinkToAuthenticatedUser() {
         // Given
         SessionInfo anonymousSession = anonymousSessionService.getOrCreateSession(null);
-        String anonId = anonymousSession.getAnonymousId();
+        String sessionId = anonymousSession.getSessionId();
 
         // When
         SessionInfo linkedSession = anonymousSessionService.linkToAuthenticatedUser(
-                anonId, "user123", "test@example.com", "DENTIST", "clinic456");
+                sessionId, "user123", "test@example.com", "DENTIST", "clinic456");
 
         // Then
         assertNotNull(linkedSession);
-        assertEquals(anonId, linkedSession.getAnonymousId());
+        assertEquals(sessionId, linkedSession.getSessionId());
         assertEquals(anonymousSession.getSessionId(), linkedSession.getSessionId());
         assertTrue(linkedSession.isAuthenticated());
         assertEquals("user123", linkedSession.getUserId());
@@ -75,14 +74,14 @@ class AnonymousSessionServiceTest {
     }
 
     @Test
-    void testLinkToAuthenticatedUser_NonExistentAnonId() {
+    void testLinkToAuthenticatedUser_NonExistentSessionId() {
         // When
         SessionInfo linkedSession = anonymousSessionService.linkToAuthenticatedUser(
                 "non-existent-id", "user123", "test@example.com", "DENTIST", "clinic456");
 
         // Then
         assertNotNull(linkedSession);
-        assertEquals("non-existent-id", linkedSession.getAnonymousId());
+        assertEquals("non-existent-id", linkedSession.getSessionId());
         assertTrue(linkedSession.isAuthenticated());
         assertEquals("user123", linkedSession.getUserId());
     }
@@ -91,7 +90,7 @@ class AnonymousSessionServiceTest {
     void testUpdateLastAccessed() {
         // Given
         SessionInfo session = anonymousSessionService.getOrCreateSession(null);
-        String anonId = session.getAnonymousId();
+        String sessionId = session.getSessionId();
         long originalLastAccessed = session.getLastAccessedAt();
 
         // Wait a bit to ensure timestamp difference
@@ -102,10 +101,10 @@ class AnonymousSessionServiceTest {
         }
 
         // When
-        anonymousSessionService.updateLastAccessed(anonId);
+        anonymousSessionService.updateLastAccessed(sessionId);
 
         // Then
-        SessionInfo updatedSession = anonymousSessionService.getSession(anonId);
+        SessionInfo updatedSession = anonymousSessionService.getSession(sessionId);
         assertNotNull(updatedSession);
         assertTrue(updatedSession.getLastAccessedAt() > originalLastAccessed);
     }
@@ -114,15 +113,15 @@ class AnonymousSessionServiceTest {
     void testGetSession() {
         // Given
         SessionInfo originalSession = anonymousSessionService.getOrCreateSession(null);
-        String anonId = originalSession.getAnonymousId();
+        String sessionId = originalSession.getSessionId();
 
         // When
-        SessionInfo retrievedSession = anonymousSessionService.getSession(anonId);
+        SessionInfo retrievedSession = anonymousSessionService.getSession(sessionId);
 
         // Then
         assertNotNull(retrievedSession);
         assertEquals(originalSession.getSessionId(), retrievedSession.getSessionId());
-        assertEquals(originalSession.getAnonymousId(), retrievedSession.getAnonymousId());
+        assertEquals(sessionId, retrievedSession.getSessionId());
     }
 
     @Test
@@ -139,13 +138,13 @@ class AnonymousSessionServiceTest {
         // Given
         SessionInfo session1 = anonymousSessionService.getOrCreateSession(null);
         SessionInfo session2 = anonymousSessionService.getOrCreateSession(null);
-        
+
         // When - cleanup with very short max age (everything should be expired)
         anonymousSessionService.cleanupExpiredSessions(1); // 1ms max age
 
         // Then - sessions should still exist immediately after creation
         // (this test is more about ensuring the method doesn't crash)
-        assertNotNull(anonymousSessionService.getSession(session1.getAnonymousId()));
-        assertNotNull(anonymousSessionService.getSession(session2.getAnonymousId()));
+        assertNotNull(anonymousSessionService.getSession(session1.getSessionId()));
+        assertNotNull(anonymousSessionService.getSession(session2.getSessionId()));
     }
 }

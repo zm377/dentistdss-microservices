@@ -10,8 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Service for managing anonymous user sessions across the API Gateway
+ * Service for managing user sessions across the API Gateway
  * Provides cryptographically secure session ID generation and management
+ * Uses a single sessionId for both anonymous and authenticated users
  *
  * @author zhifeimi
  * @email zm377@uowmail.edu.au
@@ -20,56 +21,56 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 @Service
 public class AnonymousSessionService {
-    
+
+    private static final String SESSION_ID_HEADER = "X-Session-ID";
+
     // In-memory storage for session mapping (in production, consider Redis or database)
     private final ConcurrentMap<String, SessionInfo> sessionStore = new ConcurrentHashMap<>();
     private final SecureRandom secureRandom = new SecureRandom();
 
     /**
-     * Generates or retrieves an anonymous session ID
-     * @param existingAnonId existing anonymous ID from client (if any)
+     * Generates or retrieves a session
+     * @param existingSessionId existing session ID from client (if any)
      * @return SessionInfo containing session details
      */
-    public SessionInfo getOrCreateSession(String existingAnonId) {
-        if (StringUtils.hasText(existingAnonId) && sessionStore.containsKey(existingAnonId)) {
-            SessionInfo session = sessionStore.get(existingAnonId);
-            log.debug("Retrieved existing session for anonymous ID: {}", existingAnonId);
+    public SessionInfo getOrCreateSession(String existingSessionId) {
+        if (StringUtils.hasText(existingSessionId) && sessionStore.containsKey(existingSessionId)) {
+            SessionInfo session = sessionStore.get(existingSessionId);
+            log.debug("Retrieved existing session: {}", existingSessionId);
             return session;
         }
 
         // Generate new cryptographically secure session
-        String sessionId = generateSecureSessionId();
-        String anonId = existingAnonId != null ? existingAnonId : generateSecureAnonId();
-        
+        String sessionId = existingSessionId != null ? existingSessionId : generateSecureSessionId();
+
         SessionInfo sessionInfo = SessionInfo.builder()
                 .sessionId(sessionId)
-                .anonymousId(anonId)
                 .createdAt(System.currentTimeMillis())
                 .lastAccessedAt(System.currentTimeMillis())
                 .authenticated(false)
                 .build();
 
-        sessionStore.put(anonId, sessionInfo);
-        log.debug("Created new anonymous session - AnonID: {}, SessionID: {}", anonId, sessionId);
-        
+        sessionStore.put(sessionId, sessionInfo);
+        log.debug("Created new session: {}", sessionId);
+
         return sessionInfo;
     }
 
     /**
-     * Links an anonymous session to an authenticated user
-     * @param anonId anonymous ID to link
+     * Links a session to an authenticated user
+     * @param sessionId session ID to link
      * @param userId authenticated user ID
      * @param email user email
      * @param roles user roles
      * @param clinicId user clinic ID
      * @return updated SessionInfo
      */
-    public SessionInfo linkToAuthenticatedUser(String anonId, String userId, String email, 
+    public SessionInfo linkToAuthenticatedUser(String sessionId, String userId, String email,
                                              String roles, String clinicId) {
-        SessionInfo session = sessionStore.get(anonId);
+        SessionInfo session = sessionStore.get(sessionId);
         if (session == null) {
             // Create new session if not exists
-            session = getOrCreateSession(anonId);
+            session = getOrCreateSession(sessionId);
         }
 
         SessionInfo updatedSession = session.toBuilder()
@@ -81,23 +82,23 @@ public class AnonymousSessionService {
                 .lastAccessedAt(System.currentTimeMillis())
                 .build();
 
-        sessionStore.put(anonId, updatedSession);
-        log.debug("Linked anonymous session {} to user {}", anonId, userId);
-        
+        sessionStore.put(sessionId, updatedSession);
+        log.debug("Linked session {} to user {}", sessionId, userId);
+
         return updatedSession;
     }
 
     /**
      * Updates the last accessed time for a session
-     * @param anonId anonymous ID
+     * @param sessionId session ID
      */
-    public void updateLastAccessed(String anonId) {
-        SessionInfo session = sessionStore.get(anonId);
+    public void updateLastAccessed(String sessionId) {
+        SessionInfo session = sessionStore.get(sessionId);
         if (session != null) {
             SessionInfo updatedSession = session.toBuilder()
                     .lastAccessedAt(System.currentTimeMillis())
                     .build();
-            sessionStore.put(anonId, updatedSession);
+            sessionStore.put(sessionId, updatedSession);
         }
     }
 
@@ -106,18 +107,10 @@ public class AnonymousSessionService {
      * @return secure UUID-based session ID
      */
     private String generateSecureSessionId() {
-        return UUID.randomUUID().toString();
-    }
-
-    /**
-     * Generates a cryptographically secure anonymous ID
-     * @return secure anonymous ID
-     */
-    private String generateSecureAnonId() {
-        // Generate a more secure anonymous ID using SecureRandom
+        // Generate a more secure session ID using SecureRandom
         byte[] randomBytes = new byte[16];
         secureRandom.nextBytes(randomBytes);
-        
+
         // Convert to UUID format for consistency
         return UUID.nameUUIDFromBytes(randomBytes).toString();
     }
@@ -139,12 +132,12 @@ public class AnonymousSessionService {
     }
 
     /**
-     * Gets session information by anonymous ID
-     * @param anonId anonymous ID
+     * Gets session information by session ID
+     * @param sessionId session ID
      * @return SessionInfo or null if not found
      */
-    public SessionInfo getSession(String anonId) {
-        return sessionStore.get(anonId);
+    public SessionInfo getSession(String sessionId) {
+        return sessionStore.get(sessionId);
     }
 
     /**
@@ -156,7 +149,6 @@ public class AnonymousSessionService {
     @lombok.NoArgsConstructor
     public static class SessionInfo {
         private String sessionId;
-        private String anonymousId;
         private boolean authenticated;
         private String userId;
         private String email;
