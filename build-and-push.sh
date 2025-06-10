@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Config
 REGISTRY_REPO="zm377/dentistdss-microservices"
-SERVICES=(config-server discovery-server api-gateway auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
 
 VERSION="${1:-latest}"
 PROFILE="${2:-docker}"
@@ -134,8 +134,8 @@ if [[ "$BUILD_MODE" == "parallel" ]]; then
   wait_for_builds api-gateway || exit 1
 
   echo "📦 Tier 4: Services"
-  start_builds auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service
-  wait_for_builds auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service || exit 1
+  start_builds auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service
+  wait_for_builds auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service || exit 1
 else
   echo "🔄 Sequential builds..."
   for svc in "${SERVICES[@]}"; do

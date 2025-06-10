@@ -1,5 +1,9 @@
 package press.mizhifei.dentist.gateway.filter;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -14,12 +18,9 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
+
 import press.mizhifei.dentist.gateway.security.JwtTokenProvider;
 import reactor.core.publisher.Mono;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 /**
  * JWT Authentication Filter for API Gateway
@@ -113,7 +114,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                         return handleUnauthorized(exchange);
                     }
                 })
-                .switchIfEmpty(Mono.defer(() -> {
+                .switchIfEmpty(Mono.<Void>defer(() -> {
                     log.warn("No security context found for path: {}", path);
                     return handleUnauthorized(exchange);
                 }));

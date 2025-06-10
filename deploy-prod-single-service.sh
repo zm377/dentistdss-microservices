@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Config
 REGISTRY_REPO="zm377/dentistdss-microservices"
-SERVICES=(config-server discovery-server api-gateway auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
 PROJECT_NAME="dentistdss"
 COMPOSE_FILE="docker-compose.prod.yml"
 

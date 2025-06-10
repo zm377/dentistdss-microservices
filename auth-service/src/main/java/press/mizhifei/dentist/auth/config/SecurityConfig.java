@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import press.mizhifei.dentist.auth.security.JwtAuthenticationFilter;
+import press.mizhifei.dentist.auth.security.OAuth2LoginSuccessHandler;
 
 /**
  *
@@ -32,6 +33,7 @@ import press.mizhifei.dentist.auth.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Value("${springdoc.api-docs.enabled:false}")
     private boolean springdocEnabled;
@@ -46,6 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/auth/oauth2/jwks").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll());
 
         // Only allow OpenAPI endpoints if SpringDoc is enabled (development/docker profiles)
@@ -56,7 +59,10 @@ public class SecurityConfig {
                     .requestMatchers("/swagger-ui.html").permitAll());
         }
 
-        authRequests.authorizeHttpRequests(auth -> auth.anyRequest().authenticated());
+        authRequests.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .oauth2Login(oauth2Login -> oauth2Login
+                        .successHandler(oAuth2LoginSuccessHandler)
+                );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

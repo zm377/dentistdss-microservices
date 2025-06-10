@@ -28,7 +28,7 @@ PLATFORM="linux/amd64"
 BUILDX_BUILDER="dentist-multiarch"
 
 # All available services
-ALL_SERVICES=(config-server discovery-server api-gateway auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+ALL_SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
 
 # Default values
 SERVICE_NAME=""

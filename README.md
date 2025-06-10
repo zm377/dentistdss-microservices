@@ -19,7 +19,7 @@ The system implements a **centralized security architecture** where the API Gate
 
 ## Services Architecture
 
-The system consists of the following microservices:
+The system consists of the following microservices (11 microservices + 2 databases):
 
 ### Databases
 
@@ -27,7 +27,7 @@ The system consists of the following microservices:
    - **Purpose**: Primary relational database for structured data storage
    - **Port**: 5432
    - **Database Name**: dentistdss
-   - **Used by**: Auth Service, OAuth Service, Clinic Service, Patient Service, System Service
+   - **Used by**: Auth Service, Clinic Service, Patient Service, System Service
    - **Features**:
      - Stores user accounts, authentication data, clinic information
      - Handles patient records, appointments, and system configurations
@@ -91,32 +91,29 @@ The system consists of the following microservices:
 ### Core Business Services
 
 6. **Auth Service** 🔐
-   - **Purpose**: Centralized authentication and user management (JWT token issuance only)
+   - **Purpose**: Unified authentication service handling both traditional and OAuth2 authentication
    - **Port**: 8081
    - **Architecture Role**: Issues JWT tokens; validation handled by API Gateway
    - **Features**:
      - User registration with email verification
      - Login/logout functionality with JWT token issuance
      - Password management (reset, change)
+     - **OAuth2 Authentication**: Google OAuth2 integration for social login
      - **JWT Token Generation**: Creates signed JWT tokens with user context
      - **JWKS Endpoint**: Provides public keys for token validation (`/auth/oauth2/jwks`)
      - Role and clinic assignment management
      - User profile management
+     - **OAuth2 Flows**: Supports both popup-based and redirect-based OAuth2 authentication
+   - **OAuth2 Endpoints**:
+     - `POST /oauth2/token` - Google ID token verification (popup flow)
+     - `GET /oauth2/authorization/google` - OAuth2 authorization initiation
+     - `GET /login/oauth2/code/google` - OAuth2 callback (redirect flow)
    - **Security Model**:
      - Issues JWT tokens containing user ID, email, roles, and clinic ID
      - API Gateway validates tokens using JWKS endpoint
      - No longer handles request-level authentication (delegated to API Gateway)
 
-7. **OAuth Service**
-   - **Purpose**: Provides OAuth2 authentication with external providers
-   - **Port**: 8082
-   - **Features**:
-     - Google OAuth2 integration for social login
-     - OAuth2 authorization server capabilities
-     - Token management and refresh
-     - Secure third-party authentication flow
-
-8. **Clinic Service** 🏥
+7. **Clinic Service** 🏥
    - **Purpose**: Manages dental clinic operations and data
    - **Port**: 8083
    - **Security Model**: Header-based authentication (no JWT validation)
@@ -132,7 +129,7 @@ The system consists of the following microservices:
      - Uses `UserContextUtil` for extracting user information
      - No direct JWT token handling or security configuration
 
-9. **Patient Service** 👥
+8. **Patient Service** 👥
    - **Purpose**: Handles patient-related operations
    - **Port**: 8085
    - **Security Model**: Header-based authentication (no JWT validation)
@@ -147,7 +144,7 @@ The system consists of the following microservices:
      - Uses `UserContextUtil` for extracting user information
      - No direct JWT token handling or security configuration
 
-10. **System Service**
+9. **System Service**
     - **Purpose**: Manages system-wide configurations and operations
     - **Port**: 8086
     - **Features**:
@@ -159,7 +156,7 @@ The system consists of the following microservices:
 
 ### Communication Services
 
-11. **Notification Service** 📧
+10. **Notification Service** 📧
     - **Purpose**: Handles all notification and communication features
     - **Port**: 8088
     - **Security Model**: Header-based authentication (no JWT validation)
@@ -179,7 +176,7 @@ The system consists of the following microservices:
 
 ### AI and Analytics Services
 
-12. **GenAI Service** 🤖
+11. **GenAI Service** 🤖
     - **Purpose**: Provides AI-powered chatbot and decision support features
     - **Port**: 8084
     - **Technology**: Spring AI with OpenAI integration
@@ -199,7 +196,7 @@ The system consists of the following microservices:
       - Protected endpoints receive user context via HTTP headers
       - No direct JWT token handling or security configuration
 
-13. **Audit Service**
+12. **Audit Service**
     - **Purpose**: Tracks and logs all system activities for compliance
     - **Port**: 8087
     - **Features**:
@@ -212,7 +209,7 @@ The system consists of the following microservices:
 
 ### Monitoring and Administration
 
-14. **Admin Server**
+13. **Admin Server**
     - **Purpose**: Provides administrative monitoring and management interface
     - **Port**: 9090
     - **Technology**: Spring Boot Admin
@@ -254,15 +251,14 @@ The startup order is:
 1. Config Server
 2. Discovery Server (Eureka)
 3. API Gateway
-4. Auth Service
-5. OAuth Service
-6. Audit Service
-7. System Service
-8. GenAI Service
-9. Clinic Service
-10. Patient Service
-11. Admin Server
-12. Notification Service
+4. Auth Service (with integrated OAuth2)
+5. Audit Service
+6. System Service
+7. GenAI Service
+8. Clinic Service
+9. Patient Service
+10. Admin Server
+11. Notification Service
 
 #### Stopping Local Services
 
@@ -421,9 +417,8 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 - **Discovery Server (Eureka)**: http://localhost:8761
   - Web UI available at http://localhost:8761/eureka
 
-### Authentication Services
-- **Auth Service**: http://localhost:8081
-- **OAuth Service**: http://localhost:8082
+### Authentication Service
+- **Auth Service** (with OAuth2): http://localhost:8081
 
 ### Business Services
 - **Clinic Service**: http://localhost:8083
@@ -495,6 +490,11 @@ Client Request → API Gateway → JWT Validation → Role Check → Forward wit
 - `POST /api/auth/login` - User login
 - `POST /api/auth/signup` - User registration
 - `GET /api/auth/oauth2/jwks` - JWT validation keys
+
+**OAuth2 Authentication:**
+- `POST /oauth2/token` - Google ID token verification (popup flow)
+- `GET /oauth2/authorization/google` - OAuth2 authorization initiation
+- `GET /login/oauth2/code/google` - OAuth2 callback (redirect flow)
 
 **Clinic Information:**
 - `GET /api/clinic/list/all` - Public clinic listing
@@ -634,6 +634,7 @@ Use the provided script:
 - **Hybrid Approach**: Run databases in Docker (`docker-compose up -d postgres mongo`) and services locally
 - **Logs**: Local development logs are in `logs/` directory, Docker logs via `docker-compose logs -f`
 - **Ports**: All services use the same ports in both local and Docker modes (see Service Endpoints section)
+- **OAuth2 Configuration**: Auth-service now requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables for OAuth2 functionality
 
 #### Security Development Notes
 
@@ -679,6 +680,30 @@ The script will:
 4. Start the fresh containers in detached mode.
 
 > Note: The PostgreSQL database runs in its own persistent container and volume; deployments never rebuild or replace it automatically.
+
+## 🔄 Recent Architecture Improvements
+
+### OAuth Service Consolidation (Latest Update)
+
+The OAuth-Service has been successfully consolidated into the Auth-Service to simplify the microservices architecture:
+
+#### Benefits Achieved
+- ✅ **Simplified Architecture**: Reduced from 2 authentication services to 1
+- ✅ **Eliminated Inter-Service Communication**: Removed Feign client calls between oauth-service and auth-service
+- ✅ **Improved Performance**: Direct method calls instead of HTTP requests
+- ✅ **Better Maintainability**: Single codebase for all authentication functionality
+- ✅ **Resource Optimization**: Reduced memory footprint and deployment complexity
+
+#### What Changed
+- **OAuth2 functionality moved to Auth-Service**: All OAuth2 endpoints now served by auth-service
+- **API Gateway routing updated**: OAuth2 endpoints (`/oauth2/**`, `/login/oauth2/**`) now route to auth-service
+- **Docker configuration simplified**: Removed oauth-service container from all deployment configurations
+- **All OAuth2 flows preserved**: Both popup-based and redirect-based OAuth2 authentication continue to work
+
+#### Migration Details
+For complete details about the consolidation process, see:
+- **[OAUTH_CONSOLIDATION_SUMMARY.md](OAUTH_CONSOLIDATION_SUMMARY.md)** - Comprehensive summary of changes made
+- **[VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md)** - Verification checklist and testing guide
 
 ## 🎯 Architecture Benefits
 

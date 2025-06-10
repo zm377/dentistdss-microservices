@@ -53,17 +53,17 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # OAuth Service - OAuth2 standard endpoints (no /api prefix)
-            - id: oauth-service-standard-paths
-              uri: lb://oauth-service
+            # OAuth2 endpoints - now handled by auth-service (OAuth2 standard endpoints)
+            - id: auth-service-oauth2-standard-paths
+              uri: lb://auth-service
               predicates:
                 - Path=/login/oauth2/**, /oauth2/**
               filters:
                 - StripPrefix=0
 
-            # OAuth Service - Custom API endpoints (with /api prefix)
-            - id: oauth-service-api
-              uri: lb://oauth-service
+            # OAuth2 endpoints - now handled by auth-service (Custom API endpoints with /api prefix)
+            - id: auth-service-oauth2-api
+              uri: lb://auth-service
               predicates:
                 - Path=/api/oauth2/**
               filters:

@@ -7,7 +7,7 @@
     <parent>
         <groupId>press.mizhifei.dentist</groupId>
         <artifactId>dentistdss-microservices</artifactId>
-        <version>0.9.1</version>
+        <version>0.9.2</version>
     </parent>
 
     <artifactId>notification-service</artifactId>
@@ -41,9 +41,8 @@
         <dependency>
             <groupId>io.hypersistence</groupId>
             <artifactId>hypersistence-utils-hibernate-63</artifactId>
-            <version>3.7.5</version>
         </dependency>
-        
+
         <!-- Cloud -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -92,7 +91,6 @@
                 <dependency>
                     <groupId>org.springdoc</groupId>
                     <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-                    <version>${springdoc-openapi.version}</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -104,7 +102,6 @@
                 <dependency>
                     <groupId>org.springdoc</groupId>
                     <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-                    <version>${springdoc-openapi.version}</version>
                 </dependency>
             </dependencies>
         </profile>

@@ -6,7 +6,7 @@
     <parent>
         <groupId>press.mizhifei.dentist</groupId>
         <artifactId>dentistdss-microservices</artifactId>
-        <version>0.9.1</version>
+        <version>0.9.2</version>
     </parent>
 
     <artifactId>genai-service</artifactId>
@@ -36,13 +36,11 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
-            <version>${spring-ai.version}</version>
         </dependency>
         <!-- Rate limiting -->
         <dependency>
             <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j_jdk17-core</artifactId>
-            <version>8.14.0</version>
         </dependency>
 
         <!-- MongoDB -->

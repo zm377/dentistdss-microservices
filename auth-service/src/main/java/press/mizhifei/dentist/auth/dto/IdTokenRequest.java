@@ -1,7 +1,6 @@
-package press.mizhifei.dentist.oauth.dto;
+package press.mizhifei.dentist.auth.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,11 +12,8 @@ import lombok.NoArgsConstructor;
  *
  */
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String accessToken;
-    private String tokenType;
-    private UserResponse user;
-} 
+public class IdTokenRequest {
+    private String idToken;
+}

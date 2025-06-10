@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.oauth.security;
+package press.mizhifei.dentist.auth.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,27 +12,29 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
-import press.mizhifei.dentist.oauth.client.AuthServiceFeignClient;
-import press.mizhifei.dentist.oauth.dto.AuthResponse;
-import press.mizhifei.dentist.oauth.dto.OAuthLoginRequest;
+import press.mizhifei.dentist.auth.dto.ApiResponse;
+import press.mizhifei.dentist.auth.dto.AuthResponse;
+import press.mizhifei.dentist.auth.dto.OAuthLoginRequest;
+import press.mizhifei.dentist.auth.service.AuthService;
 
 import java.io.IOException;
 import java.util.List;
 
 /**
+ * OAuth2 Login Success Handler for redirect-based OAuth2 flows
+ * Migrated from oauth-service to consolidate authentication functionality
  *
  * @author zhifeimi
  * @email zm377@uowmail.edu.au
  * @github https://github.com/zm377
  *
  */
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final AuthServiceFeignClient authServiceFeignClient;
+    private final AuthService authService;
 
     @Value("${app.oauth2.authorizedRedirectUris:http://localhost:3000/oauth2/redirect,https://dentist.mizhifei.press/oauth2/redirect}")
     private List<String> authorizedRedirectUris;
@@ -68,15 +70,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         try {
             log.debug("Processing OAuth login request: {}", oAuthLoginRequest);
-            AuthResponse authResponse = authServiceFeignClient.processOAuthLogin(oAuthLoginRequest).getBody().getDataObject();
+            // Process OAuth login directly through AuthService (no more Feign client needed)
+            ApiResponse<AuthResponse> authResponseApi = authService.processOAuthLogin(oAuthLoginRequest);
             
-            if (authResponse == null || authResponse.getAccessToken() == null) {
+            if (!authResponseApi.isSuccess() || authResponseApi.getDataObject() == null || authResponseApi.getDataObject().getAccessToken() == null) {
                 log.error("Failed to get valid AuthResponse from auth-service for email: {}", email);
                 getRedirectStrategy().sendRedirect(request, response, determineTargetUrl(request, response, authentication) + "?error=AuthenticationFailed");
                 return;
             }
 
-            String token = authResponse.getAccessToken();
+            String token = authResponseApi.getDataObject().getAccessToken();
             // Use the first configured redirect URI as the target
             // In a real app, you might get this from the 'state' parameter or other means
             String targetUrl = authorizedRedirectUris.get(0);
@@ -88,7 +91,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 
         } catch (Exception e) {
-            log.error("Error processing OAuth login or calling auth-service for email {}: {}", email, e.getMessage(), e);
+            log.error("Error processing OAuth login for email {}: {}", email, e.getMessage(), e);
             String errorRedirect = authorizedRedirectUris.get(0) + "?error=LoginProcessingError";
              try {
                  getRedirectStrategy().sendRedirect(request, response, errorRedirect);
@@ -100,4 +103,4 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     // Optional: Override determineTargetUrl if you need more complex logic for the base redirect before token
     // For now, we construct the full redirect URL with token inside onAuthenticationSuccess
-} 
+}

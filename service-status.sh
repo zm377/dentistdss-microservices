@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 echo -e "${YELLOW}Checking status of all microservices...${NC}"
 echo ""
 
-services=("postgres" "mongo" "config-server" "discovery-server" "api-gateway" "auth-service" "oauth-service" "audit-service" "system-service" "genai-service" "clinic-service" "patient-service" "admin-server" "notification-service")
+services=("postgres" "mongo" "config-server" "discovery-server" "api-gateway" "auth-service" "audit-service" "system-service" "genai-service" "clinic-service" "patient-service" "admin-server" "notification-service")
 
 for service in "${services[@]}"; do
     status=$(docker-compose ps $service | grep -q "Up" && echo "Running" || echo "Stopped")

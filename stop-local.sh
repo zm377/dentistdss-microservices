@@ -12,7 +12,6 @@ SERVICES=(
   "discovery-server"
   "api-gateway"
   "auth-service"
-  "oauth-service"
   "audit-service"
   "system-service"
   "genai-service"

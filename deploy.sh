@@ -10,7 +10,7 @@ set -euo pipefail
 
 # ---------- CONFIG ----------
 REGISTRY_REPO="zm377/dentistdss-microservices"
-SERVICES=(config-server discovery-server api-gateway auth-service oauth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
+SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service patient-service admin-server notification-service)
 VERSION="${1:-latest}"
 ENVIRONMENT="${2:-development}"
 # The compose project name used both for tagging convention and compose commands

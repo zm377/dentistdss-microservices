@@ -1,4 +1,4 @@
-package press.mizhifei.dentist.oauth.config;
+package press.mizhifei.dentist.auth.config;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -25,4 +25,4 @@ public class GoogleIdTokenVerifierConfig {
                 .setAudience(Collections.singletonList(clientId))
                 .build();
     }
-} 
+}
