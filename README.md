@@ -223,7 +223,7 @@ OPENAI_API_KEY=your_openai_api_key
 # Optional (Vertex AI)
 VERTEX_AI_ENABLED=false
 VERTEX_AI_PROJECT_ID=your_gcp_project_id
-VERTEX_AI_LOCATION=australia-southeast1
+VERTEX_AI_LOCATION=us-central1
 ```
 
 ## Testing

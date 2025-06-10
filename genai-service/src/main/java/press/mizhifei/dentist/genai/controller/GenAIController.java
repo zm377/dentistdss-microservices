@@ -42,60 +42,63 @@ public class GenAIController {
     public Flux<String> help(@RequestBody String prompt, ServerHttpRequest request) {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
-        String sessionId = userContext.getSessionId() != null ? userContext.getSessionId() : UUID.randomUUID().toString();
 
         long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(sessionId, tokens)) {
+        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
             return Flux.just(limitMessage());
         }
 
         // Use enhanced streaming with context and orchestration
-        return streamAndPersistWithContext("help", sessionId, userContext, prompt, null);
+        return streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, null);
     }
 
     @PostMapping(value = "/receptionist", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> receptionist(@RequestBody String prompt, @RequestHeader(value = "X-Session-Id", required = false) String sessionIdHeader) {
-        String sid = sessionIdHeader == null ? UUID.randomUUID().toString() : sessionIdHeader;
+    public Flux<String> receptionist(@RequestBody String prompt, ServerHttpRequest request) {
+        // Extract user context from headers
+        UserContextService.UserContext userContext = userContextService.extractUserContext(request);
         long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(sid, tokens)) {
+        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
             return Flux.just(limitMessage());
         }
         // String apiProvidedContext = getApiContextForAgent("receptionist", prompt);
-        return streamAndPersist("receptionist", sid, null, prompt, null);
+        return streamAndPersist("receptionist", userContext.getSessionId(), userContext.getUserId(), prompt, null);
     }
 
     @PostMapping(value = "/aidentist", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> aiDentist(@RequestBody String prompt, @RequestHeader(value = "X-Session-Id", required = false) String sessionIdHeader) {
-        String sid = sessionIdHeader == null ? UUID.randomUUID().toString() : sessionIdHeader;
+    public Flux<String> aiDentist(@RequestBody String prompt, ServerHttpRequest request) {
+        // Extract user context from headers
+        UserContextService.UserContext userContext = userContextService.extractUserContext(request);
         long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(sid, tokens)) {
+        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
             return Flux.just(limitMessage());
         }
         // String apiProvidedContext = getApiContextForAgent("aidentist", prompt);
-        return streamAndPersist("aidentist", sid, null, prompt, null);
+        return streamAndPersist("aidentist", userContext.getSessionId(), userContext.getUserId(), prompt, null);
     }
     
     @PostMapping(value = "/triage", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> triage(@RequestBody String symptoms, @RequestHeader(value = "X-Session-Id", required = false) String sessionIdHeader) {
-        String sid = sessionIdHeader == null ? UUID.randomUUID().toString() : sessionIdHeader;
+    public Flux<String> triage(@RequestBody String symptoms, ServerHttpRequest request) {
+        // Extract user context from headers
+        UserContextService.UserContext userContext = userContextService.extractUserContext(request);
         long tokens = estimateTokens(symptoms);
-        if (!tokenRateLimiter.tryConsume(sid, tokens)) {
+        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
             return Flux.just(limitMessage());
         }
         // String apiProvidedContext = getApiContextForAgent("triage", symptoms);
-        return streamAndPersist("triage", sid, null, symptoms, null);
+        return streamAndPersist("triage", userContext.getSessionId(), userContext.getUserId(), symptoms, null);
     }
 
     @PostMapping(value = "/documentation/summarize", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> summarizeDocumentation(@RequestBody String notes, @RequestHeader(value = "X-Session-Id", required = false) String sessionIdHeader) {
-        String sid = sessionIdHeader == null ? UUID.randomUUID().toString() : sessionIdHeader;
+    public Flux<String> summarizeDocumentation(@RequestBody String notes, ServerHttpRequest request) {
+        // Extract user context from headers
+        UserContextService.UserContext userContext = userContextService.extractUserContext(request);
         long tokens = estimateTokens(notes);
-        if (!tokenRateLimiter.tryConsume(sid, tokens)) {
+        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
             return Flux.just(limitMessage());
         }
         // For documentation, the notes themselves can be part of the apiProvidedContext or the main prompt
         // Depending on how ChatService is structured, it might be better to pass notes as 'prompt' and use context for specific instructions if any.
-        return streamAndPersist("documentation", sid, null, notes, null);
+        return streamAndPersist("documentation", userContext.getSessionId(), userContext.getUserId(), notes, null);
     }
 
     private Flux<String> streamAndPersist(String agent, String sessionId, String userId, String prompt, String apiProvidedContext) {
@@ -128,7 +131,7 @@ public class GenAIController {
                     : Collections.emptyList();
                 
                 // Ensure an API context, even if null, is passed to ChatService
-                // String actualApiContext = (apiProvidedContext == null) ? getApiContextForAgent(agent, prompt) : apiProvidedContext;
+//                 String actualApiContext = (apiProvidedContext == null) ? getApiContextForAgent(agent, prompt) : apiProvidedContext;
 
                 final Conversation finalConversation = conversation; // Effectively final for lambda
                 StringBuilder assistantResponseAggregator = new StringBuilder();

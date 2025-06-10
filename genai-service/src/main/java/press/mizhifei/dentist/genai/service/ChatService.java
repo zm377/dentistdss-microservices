@@ -75,8 +75,7 @@ public class ChatService {
                             .streamChat(new Prompt(messages))
                             .doOnNext(responseBuilder::append)
                             .doOnComplete(() -> {
-                                UUID sessionId = userContext.getSessionId() != null ?
-                                        UUID.fromString(userContext.getSessionId()) : UUID.randomUUID();
+                                UUID sessionId = UUID.fromString(userContext.getSessionId());
                                 Long userId = userContext.getUserId() != null ?
                                         Long.parseLong(userContext.getUserId()) : null;
 
