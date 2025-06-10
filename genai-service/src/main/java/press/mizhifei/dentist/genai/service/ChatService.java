@@ -10,8 +10,9 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 import press.mizhifei.dentist.genai.model.AIInteraction;
-import press.mizhifei.dentist.genai.model.Conversation; // Assuming Conversation.Message is accessible
+import press.mizhifei.dentist.genai.model.Conversation;
 import press.mizhifei.dentist.genai.repository.AIInteractionRepository;
+import press.mizhifei.dentist.genai.service.UserContextService.UserContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -22,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -39,16 +39,16 @@ public class ChatService {
     private final ChatClient chatClient;
     private final AIPromptService promptService;
     private final AIInteractionRepository aiInteractionRepository;
+    private final PromptOrchestrationService promptOrchestrationService;
+    private final AIProviderService aiProviderService;
 
     public Flux<String> streamChat(String agent, String userPrompt, List<Conversation.Message> history, String apiProvidedContext, UUID sessionId, Long userId) {
         Instant startTime = Instant.now();
         StringBuilder responseBuilder = new StringBuilder();
         List<Message> messages = buildMessages(agent, userPrompt, history, apiProvidedContext);
 
-        return chatClient
-                .prompt(new Prompt(messages))
-                .stream()
-                .content()
+        return aiProviderService
+                .streamChat(new Prompt(messages))
                 .doOnNext(responseBuilder::append)
                 .doOnComplete(() -> {
                     saveInteraction(agent, userPrompt, responseBuilder.toString(),
@@ -56,6 +56,37 @@ public class ChatService {
                 })
                 .doOnError(error -> {
                     log.error("Error in chat streaming for agent {}: {}", agent, error.getMessage());
+                });
+    }
+
+    /**
+     * Enhanced streaming chat with user context and prompt orchestration
+     */
+    public Flux<String> streamChatWithContext(String agent, String userPrompt, List<Conversation.Message> history,
+                                            String apiProvidedContext, UserContext userContext) {
+        Instant startTime = Instant.now();
+        StringBuilder responseBuilder = new StringBuilder();
+
+        return promptOrchestrationService.orchestratePrompt(agent, userContext, userPrompt, apiProvidedContext)
+                .flatMapMany(orchestratedPrompt -> {
+                    List<Message> messages = buildMessagesWithOrchestration(orchestratedPrompt, userPrompt, history);
+
+                    return aiProviderService
+                            .streamChat(new Prompt(messages))
+                            .doOnNext(responseBuilder::append)
+                            .doOnComplete(() -> {
+                                UUID sessionId = userContext.getSessionId() != null ?
+                                        UUID.fromString(userContext.getSessionId()) : UUID.randomUUID();
+                                Long userId = userContext.getUserId() != null ?
+                                        Long.parseLong(userContext.getUserId()) : null;
+
+                                saveInteraction(agent, userPrompt, responseBuilder.toString(),
+                                        sessionId, userId, startTime, apiProvidedContext,
+                                        history != null ? history.size() : 0).subscribe();
+                            });
+                })
+                .doOnError(error -> {
+                    log.error("Error in enhanced chat streaming for agent {}: {}", agent, error.getMessage());
                 });
     }
 
@@ -79,11 +110,31 @@ public class ChatService {
     private List<Message> buildMessages(String agent, String userPrompt, List<Conversation.Message> history, String apiProvidedContext) {
         List<Message> messages = new ArrayList<>();
         String systemPromptContent = promptService.getSystemPrompt(agent);
-        
+
         if (apiProvidedContext != null && !apiProvidedContext.isEmpty()) {
             systemPromptContent += "\n\nContext: " + apiProvidedContext;
         }
         messages.add(new SystemMessage(systemPromptContent));
+
+        if (history != null) {
+            for (Conversation.Message msg : history) {
+                if ("user".equalsIgnoreCase(msg.getRole())) {
+                    messages.add(new UserMessage(msg.getContent()));
+                } else if ("assistant".equalsIgnoreCase(msg.getRole())) {
+                    messages.add(new AssistantMessage(msg.getContent()));
+                }
+            }
+        }
+        messages.add(new UserMessage(userPrompt)); // Current user prompt
+        return messages;
+    }
+
+    /**
+     * Builds messages with orchestrated system prompt
+     */
+    private List<Message> buildMessagesWithOrchestration(String orchestratedSystemPrompt, String userPrompt, List<Conversation.Message> history) {
+        List<Message> messages = new ArrayList<>();
+        messages.add(new SystemMessage(orchestratedSystemPrompt));
 
         if (history != null) {
             for (Conversation.Message msg : history) {

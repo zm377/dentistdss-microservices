@@ -12,6 +12,42 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4.1-nano-2025-04-14
+    vertex:
+      ai:
+        gemini:
+          project-id: ${VERTEX_AI_PROJECT_ID:}
+          location: ${VERTEX_AI_LOCATION:us-central1}
+          chat:
+            options:
+              model: gemini-2.5-pro-20250506
+
+# GenAI Provider Configuration
+genai:
+  providers:
+    default-provider: openai
+    switching:
+      enable-failover: true
+      max-retries: 3
+      timeout-ms: 30000
+      enable-load-balancing: false
+      load-balancing-strategy: round_robin
+    openai:
+      enabled: true
+      default-model: gpt-4.1-nano-2025-04-14
+      weight: 50
+      max-tokens: 4096
+      temperature: 0.7
+    vertexai:
+      enabled: ${VERTEX_AI_ENABLED:false}
+      project-id: ${VERTEX_AI_PROJECT_ID:}
+      location: ${VERTEX_AI_LOCATION:us-central1}
+      default-model: gemini-2.5-pro-20250506
+      weight: 50
+      max-tokens: 4096
+      temperature: 0.7
 
 eureka:
   client:

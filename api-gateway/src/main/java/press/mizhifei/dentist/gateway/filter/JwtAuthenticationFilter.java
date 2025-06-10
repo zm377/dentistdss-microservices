@@ -62,9 +62,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().toString();
 
-        // Skip authentication for public endpoints
+        // Skip authentication for public endpoints - they are handled by AnonymousSessionFilter
         if (isPublicEndpoint(path)) {
-            log.debug("Skipping authentication for public endpoint: {}", path);
+            log.debug("Skipping JWT authentication for public endpoint: {}", path);
             return chain.filter(exchange);
         }
 
@@ -77,8 +77,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         String token = authHeader.substring(7);
 
-        // Get authentication from security context (token already validated by Spring
-        // Security)
+        // Get authentication from security context (token already validated by Spring Security)
         return ReactiveSecurityContextHolder.getContext()
                 .cast(org.springframework.security.core.context.SecurityContext.class)
                 .map(securityContext -> securityContext.getAuthentication())
@@ -100,15 +99,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                             return handleForbidden(exchange);
                         }
 
-                        // Forward user context to downstream services via headers
-                        ServerHttpRequest modifiedRequest = request.mutate()
-                                .header("X-User-ID", userId != null ? userId : "")
-                                .header("X-User-Email", email != null ? email : "")
-                                .header("X-User-Roles", roles != null ? roles : "")
-                                .header("X-Clinic-ID", clinicId != null ? clinicId : "")
-                                .build();
-
-                        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+                        // Headers are already set by AnonymousSessionFilter for authenticated users
+                        // Just proceed with the request
+                        return chain.filter(exchange);
                     } else {
                         log.warn("Authentication failed for path: {}", path);
                         return handleUnauthorized(exchange);
@@ -221,6 +214,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 1; // Execute after security but before other filters
+        return Ordered.HIGHEST_PRECEDENCE + 2; // Execute after AnonymousSessionFilter
     }
 }

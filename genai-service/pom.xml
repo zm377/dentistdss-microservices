@@ -37,6 +37,12 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
+
+        <!-- Spring AI with Google Vertex AI backend -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-vertex-ai-gemini</artifactId>
+        </dependency>
         <!-- Rate limiting -->
         <dependency>
             <groupId>com.bucket4j</groupId>

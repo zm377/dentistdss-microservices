@@ -1,12 +1,15 @@
 package press.mizhifei.dentist.genai.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import press.mizhifei.dentist.genai.model.Conversation;
 import press.mizhifei.dentist.genai.repository.ConversationRepository;
 import press.mizhifei.dentist.genai.service.ChatService;
 import press.mizhifei.dentist.genai.service.TokenRateLimiter;
+import press.mizhifei.dentist.genai.service.UserContextService;
 import reactor.core.publisher.Flux;
 
 import java.time.Instant;
@@ -23,6 +26,7 @@ import java.util.UUID;
  * @github https://github.com/zm377
  *
  */
+@Slf4j
 @RestController
 @RequestMapping("/genai/chatbot")
 @RequiredArgsConstructor
@@ -31,18 +35,22 @@ public class GenAIController {
     private final ChatService chatService;
     private final TokenRateLimiter tokenRateLimiter;
     private final ConversationRepository conversationRepository;
+    private final UserContextService userContextService;
     private static final int MAX_HISTORY_MESSAGES = 10; // Max 5 turns (user + assistant)
 
     @PostMapping(value = "/help", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> help(@RequestBody String prompt, @RequestHeader(value = "X-Session-Id", required = false) String sessionIdHeader) {
-        String sid = sessionIdHeader == null ? UUID.randomUUID().toString() : sessionIdHeader;
+    public Flux<String> help(@RequestBody String prompt, ServerHttpRequest request) {
+        // Extract user context from headers
+        UserContextService.UserContext userContext = userContextService.extractUserContext(request);
+        String sessionId = userContext.getSessionId() != null ? userContext.getSessionId() : UUID.randomUUID().toString();
+
         long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(sid, tokens)) {
+        if (!tokenRateLimiter.tryConsume(sessionId, tokens)) {
             return Flux.just(limitMessage());
         }
-        // For "help" agent, apiProvidedContext can be used to fetch FAQ data if needed.
-        // String apiProvidedContext = getApiContextForAgent("help", prompt);
-        return streamAndPersist("help", sid, null, prompt, null);
+
+        // Use enhanced streaming with context and orchestration
+        return streamAndPersistWithContext("help", sessionId, userContext, prompt, null);
     }
 
     @PostMapping(value = "/receptionist", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -146,6 +154,64 @@ public class GenAIController {
                         if (finalConversation.getMessages().size() == 1) { // Only user message added so far
                              conversationRepository.save(finalConversation).subscribe(); 
                         }
+                    });
+            });
+    }
+
+    /**
+     * Enhanced streaming with user context and prompt orchestration
+     */
+    private Flux<String> streamAndPersistWithContext(String agent, String sessionId, UserContextService.UserContext userContext, String prompt, String apiProvidedContext) {
+        String userId = userContext.getUserId();
+
+        return conversationRepository.findBySessionId(sessionId)
+            .collectList()
+            .flatMapMany(conversations -> {
+                Conversation conversation;
+                if (conversations.isEmpty()) {
+                    conversation = new Conversation();
+                    conversation.setSessionId(sessionId);
+                    conversation.setUserId(userId);
+                    conversation.setAgent(agent);
+                    conversation.setMessages(new ArrayList<>());
+                } else {
+                    conversation = conversations.stream().max(Comparator.comparing(Conversation::getCreatedAt)).get();
+                    conversation.setAgent(agent);
+                    if (userId != null) conversation.setUserId(userId);
+                }
+
+                Conversation.Message userMsg = new Conversation.Message();
+                userMsg.setRole("user");
+                userMsg.setContent(prompt);
+                userMsg.setTimestamp(Instant.now());
+                conversation.getMessages().add(userMsg);
+
+                List<Conversation.Message> historyForChatService = conversation.getMessages().size() > 1 ?
+                    conversation.getMessages().subList(Math.max(0, conversation.getMessages().size() - 1 - MAX_HISTORY_MESSAGES), conversation.getMessages().size() - 1)
+                    : Collections.emptyList();
+
+                final Conversation finalConversation = conversation;
+                StringBuilder assistantResponseAggregator = new StringBuilder();
+
+                // Use enhanced chat service with context and orchestration
+                return chatService.streamChatWithContext(agent, prompt, historyForChatService, apiProvidedContext, userContext)
+                    .doOnNext(assistantResponseAggregator::append)
+                    .doOnComplete(() -> {
+                        Conversation.Message assistantMsg = new Conversation.Message();
+                        assistantMsg.setRole("assistant");
+                        assistantMsg.setContent(assistantResponseAggregator.toString());
+                        assistantMsg.setTimestamp(Instant.now());
+                        finalConversation.getMessages().add(assistantMsg);
+                        finalConversation.setCreatedAt(Instant.now());
+                        conversationRepository.save(finalConversation).subscribe();
+                    })
+                    .doOnSubscribe(subscription -> {
+                        if (finalConversation.getMessages().size() == 1) {
+                             conversationRepository.save(finalConversation).subscribe();
+                        }
+                    })
+                    .doOnError(error -> {
+                        log.error("Error in streamAndPersistWithContext for agent {}: {}", agent, error.getMessage());
                     });
             });
     }
