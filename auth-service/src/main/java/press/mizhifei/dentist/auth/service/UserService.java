@@ -3,8 +3,8 @@ package press.mizhifei.dentist.auth.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import press.mizhifei.dentist.auth.controller.UserController.UserDetailsResponse;
 import press.mizhifei.dentist.auth.dto.ApiResponse;
+import press.mizhifei.dentist.auth.dto.UserDetailsResponse;
 import press.mizhifei.dentist.auth.dto.UserResponse;
 import press.mizhifei.dentist.auth.dto.UserUpdateRequest;
 import press.mizhifei.dentist.auth.model.User;
@@ -52,14 +52,19 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        UserDetailsResponse details = new UserDetailsResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPhone(),
-                user.getAddress()
-        );
+        UserDetailsResponse details = UserDetailsResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .fullName(user.getFirstName() + " " + user.getLastName())
+                .phone(user.getPhone())
+                .address(user.getAddress())
+                .roles(user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()))
+                .clinicId(user.getClinicId())
+                .clinicName(user.getClinicName())
+                .enabled(user.isEnabled())
+                .build();
 
         return ApiResponse.success(details);
     }
