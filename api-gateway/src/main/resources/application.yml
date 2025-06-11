@@ -86,11 +86,11 @@ spring:
             # Business Domain Services
             # =============================================================================
 
-            # Clinic Management Service
-            - id: clinic-service
-              uri: lb://clinic-service
+            # Clinic Administration Service
+            - id: clinic-admin-service
+              uri: lb://clinic-admin-service
               predicates:
-                - Path=/api/clinic/**
+                - Path=/api/clinic-admin/**
               filters:
                 - StripPrefix=1
 
@@ -206,11 +206,11 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # Clinic Service Documentation
-            - id: clinic-service-openapi
-              uri: lb://clinic-service
+            # Clinic Admin Service Documentation
+            - id: clinic-admin-service-openapi
+              uri: lb://clinic-admin-service
               predicates:
-                - Path=/clinic-service/v3/api-docs
+                - Path=/clinic-admin-service/v3/api-docs
               filters:
                 - StripPrefix=1
 
@@ -318,8 +318,8 @@ springdoc:
         url: /v3/api-docs
       - name: auth-service (includes OAuth)
         url: /auth-service/v3/api-docs
-      - name: clinic-service
-        url: /clinic-service/v3/api-docs
+      - name: clinic-admin-service
+        url: /clinic-admin-service/v3/api-docs
       - name: appointment-service
         url: /appointment-service/v3/api-docs
       - name: clinical-records-service

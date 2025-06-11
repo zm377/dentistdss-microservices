@@ -138,11 +138,11 @@ services:
 
 
 
-  # Clinic Service
-  clinic-service:
+  # Clinic Admin Service
+  clinic-admin-service:
     build:
-      context: ./clinic-service
-    container_name: clinic-service
+      context: ./clinic-admin-service
+    container_name: clinic-admin-service
     restart: always
     ports:
       - "8083:8083"

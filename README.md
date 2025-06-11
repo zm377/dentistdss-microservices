@@ -471,6 +471,17 @@ For detailed information:
 
 ## Recent Major Updates
 
+### Clinic Service Refactoring to Clinic Admin Service
+- **Service Renaming**: Refactored `clinic-service` to `clinic-admin-service` for focused clinic administration
+- **Enhanced Functionality**: Added comprehensive working hours and holiday management capabilities
+- **Role-Based Access Control**: Implemented proper authorization for clinic administrators
+- **SOLID Principles**: Complete redesign following SOLID principles and clean architecture patterns
+- **New Features**:
+  - **Working Hours Management**: Full CRUD operations for clinic schedules with support for regular weekly hours and special date-specific hours
+  - **Holiday Management**: Comprehensive holiday scheduling with recurring holidays, emergency closures, and special hours
+  - **Enhanced Clinic CRUD**: Improved clinic management with time zone support and approval workflows
+  - **API Endpoint Restructuring**: Updated from `/api/clinics/**` to `/api/clinic-admin/**` for better semantic clarity
+
 ### Spring Cloud Config Server Implementation
 - **Externalized Configuration**: All configuration moved to external Git repository
 - **12-Factor App Compliance**: Complete separation of configuration from code
