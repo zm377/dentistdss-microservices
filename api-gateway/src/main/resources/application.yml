@@ -146,11 +146,11 @@ spring:
             # System & Infrastructure Services
             # =============================================================================
 
-            # System Management Service
-            - id: system-service
-              uri: lb://system-service
+            # System Administration Service
+            - id: system-admin-service
+              uri: lb://system-admin-service
               predicates:
-                - Path=/api/system/**
+                - Path=/api/system-admin/**
               filters:
                 - StripPrefix=1
 
@@ -246,11 +246,11 @@ spring:
               filters:
                 - StripPrefix=1
 
-            # System Service Documentation
-            - id: system-service-openapi
-              uri: lb://system-service
+            # System Admin Service Documentation
+            - id: system-admin-service-openapi
+              uri: lb://system-admin-service
               predicates:
-                - Path=/system-service/v3/api-docs
+                - Path=/system-admin-service/v3/api-docs
               filters:
                 - StripPrefix=1
 
@@ -328,8 +328,8 @@ springdoc:
         url: /genai-service/v3/api-docs
       - name: user-profile-service
         url: /user-profile-service/v3/api-docs
-      - name: system-service
-        url: /system-service/v3/api-docs
+      - name: system-admin-service
+        url: /system-admin-service/v3/api-docs
       - name: audit-service
         url: /audit-service/v3/api-docs
       - name: notification-service

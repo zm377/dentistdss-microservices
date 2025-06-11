@@ -471,6 +471,19 @@ For detailed information:
 
 ## Recent Major Updates
 
+### System Service Refactoring to System Admin Service
+- **Service Renaming**: Refactored `system-service` to `system-admin-service` for comprehensive system administration
+- **Enhanced System Configuration Management**: Complete rate limiting and system parameter administration
+- **Configuration Refresh Orchestration**: Centralized configuration refresh across all microservices
+- **SYSTEM_ADMIN Role-Based Access Control**: Strict access control for system administration functions
+- **SOLID Principles**: Complete redesign following SOLID principles and clean architecture patterns
+- **New Features**:
+  - **Rate Limiting Configuration**: Dynamic management of API rate limits with multi-dimensional limiting (per-user, per-role, per-clinic)
+  - **System Parameter Management**: Comprehensive system-wide parameter configuration with validation and constraints
+  - **Configuration Refresh Orchestration**: Centralized refresh management for all microservices with status tracking
+  - **Audit and Monitoring**: Complete audit trail for all configuration changes and refresh operations
+  - **API Endpoint Restructuring**: Updated from `/api/system/**` to `/api/system-admin/**` for better semantic clarity
+
 ### Clinic Service Refactoring to Clinic Admin Service
 - **Service Renaming**: Refactored `clinic-service` to `clinic-admin-service` for focused clinic administration
 - **Enhanced Functionality**: Added comprehensive working hours and holiday management capabilities

@@ -1,0 +1,63 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: system-admin-service
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/dentistdss
+    username: dentistdss
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://auth-service:8081}/auth/oauth2/jwks
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    preferIpAddress: false
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,refresh,env,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    refresh:
+      enabled: true
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
+  security:
+    enabled: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    press.mizhifei.dentist: INFO
+    org.springframework: INFO

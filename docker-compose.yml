@@ -301,11 +301,11 @@ services:
       - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
 
-  # System Service
-  system-service:
+  # System Administration Service
+  system-admin-service:
     build:
-      context: ./system-service
-    container_name: system-service
+      context: ./system-admin-service
+    container_name: system-admin-service
     restart: always
     ports:
       - "8086:8086"
