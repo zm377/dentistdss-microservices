@@ -24,6 +24,7 @@ include 'user-profile-service'
 include 'system-service'
 include 'audit-service'
 include 'notification-service'
+include 'chat-log-service'
 
 // Enable Gradle features for performance
 enableFeaturePreview('TYPESAFE_PROJECT_ACCESSORS')

@@ -140,6 +140,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return authorizeNotificationEndpoints(path, userRoles, clinicId);
         } else if (path.startsWith("/api/genai/")) {
             return authorizeGenAIEndpoints(path, userRoles);
+        } else if (path.startsWith("/api/chatlogs/")) {
+            return authorizeChatLogEndpoints(path, userRoles, clinicId);
         }
 
         // Default: require authentication but allow access
@@ -180,6 +182,30 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private boolean authorizeGenAIEndpoints(String path, List<String> userRoles) {
         // All authenticated users can access GenAI endpoints
         return true;
+    }
+
+    private boolean authorizeChatLogEndpoints(String path, List<String> userRoles, String clinicId) {
+        // System admins have full access
+        if (userRoles.contains("SYSTEM_ADMIN")) {
+            return true;
+        }
+
+        // Dentists and clinic admins can access chat logs for their clinic
+        if (userRoles.contains("DENTIST") || userRoles.contains("CLINIC_ADMIN")) {
+            return clinicId != null; // Must be associated with a clinic
+        }
+
+        // Patients can only access their own chat logs (handled at service level)
+        if (userRoles.contains("PATIENT")) {
+            return true;
+        }
+
+        // Receptionists can access chat logs for their clinic
+        if (userRoles.contains("RECEPTIONIST")) {
+            return clinicId != null;
+        }
+
+        return false;
     }
 
     private String extractClinicIdFromPath(String path) {

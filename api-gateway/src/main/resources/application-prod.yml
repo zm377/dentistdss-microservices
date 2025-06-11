@@ -166,6 +166,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Chat Log Service
+            - id: chat-log-service
+              uri: lb://chat-log-service
+              predicates:
+                - Path=/api/chatlogs/**
+              filters:
+                - StripPrefix=1
+
             # Admin Server (Spring Boot Admin) - Limited access in production
             - id: admin-server
               uri: lb://admin-server

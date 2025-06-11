@@ -345,6 +345,28 @@ services:
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
+  # Chat Log Service
+  chat-log-service:
+    build:
+      context: ./chat-log-service
+    container_name: chat-log-service
+    restart: always
+    ports:
+      - "8091:8091"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATA_MONGODB_URI=mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+
 # Volumes
 volumes:
   postgres_data:

@@ -159,6 +159,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Chat Log Service
+            - id: chat-log-service
+              uri: lb://chat-log-service
+              predicates:
+                - Path=/api/chatlogs/**
+              filters:
+                - StripPrefix=1
+
             # Admin Server (Spring Boot Admin)
             - id: admin-server
               uri: lb://admin-server
@@ -243,6 +251,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Chat Log Service Documentation
+            - id: chat-log-service-openapi
+              uri: lb://chat-log-service
+              predicates:
+                - Path=/chat-log-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
       # =============================================================================
       # Route Configuration
       # =============================================================================
@@ -291,6 +307,8 @@ springdoc:
         url: /audit-service/v3/api-docs
       - name: notification-service
         url: /notification-service/v3/api-docs
+      - name: chat-log-service
+        url: /chat-log-service/v3/api-docs
 
 # =============================================================================
 # Server Configuration

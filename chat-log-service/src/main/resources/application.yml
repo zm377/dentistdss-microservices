@@ -1,0 +1,73 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: chat-log-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      uri: http://localhost:8888
+      username: ${SPRING_CONFIG_USER}
+      password: ${SPRING_CONFIG_PASS}
+      fail-fast: false
+  data:
+    mongodb:
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
+      database: dentistdss
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
+
+# OpenAPI/SpringDoc Configuration - enabled for development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# PHI Redaction Configuration
+phi:
+  redaction:
+    enabled: true
+    patterns:
+      ssn: '\b\d{3}-?\d{2}-?\d{4}\b'
+      phone: '\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'
+      email: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+      credit-card: '\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b'
+      date-of-birth: '\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'
+    replacement: "[REDACTED]"
+    audit-enabled: true
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.security: DEBUG
+    root: INFO

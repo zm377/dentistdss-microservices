@@ -1,0 +1,35 @@
+/*
+ * Chat Log Service - Build Script
+ * Comprehensive chat logging service for DentistDSS
+ */
+
+description = 'Chat Log Service for DentistDSS - Persists all conversational interactions'
+
+dependencies {
+    // Core WebFlux and MongoDB Reactive for high performance
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    
+    // Cloud Services
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    
+    // Security for JWT resource server
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    
+    // Actuator for health checks and monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Profile-based OpenAPI dependency
+    if (project.ext.springdocEnabled) {
+        implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui'
+    }
+    
+    // Testing dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
+}
