@@ -24,7 +24,19 @@ generate-ssl-key.sh
 lessons.txt
 logs/
 .env
+.env.local
+.env.*.local
+*.env
 c.sh
+
+# Security-sensitive files
+secrets/
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+*.truststore
 
 # Migration and documentation temporary files
 *_MIGRATION_*.md
