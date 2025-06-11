@@ -45,8 +45,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/auth/",
             "/oauth2/",
             "/login/oauth2/",
-            "/api/clinic/list/all",
-            "/api/clinic/search",
+            "/api/clinic-admin/clinics",
+            "/api/clinic-admin/clinics/search",
             "/api/genai/chatbot/help",
             "/actuator/",
             "/v3/api-docs",
@@ -113,8 +113,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      * Check if the endpoint is public and doesn't require authentication
      */
     private boolean isPublicEndpoint(String path) {
-        // Check standard public endpoints
-        boolean isStandardPublic = PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith);
+        // Check standard public endpoints - both prefix matching and exact matching
+        boolean isStandardPublic = PUBLIC_ENDPOINTS.stream().anyMatch(endpoint ->
+            path.startsWith(endpoint) || path.equals(endpoint));
 
         // Check for service-specific Swagger/OpenAPI endpoints
         boolean isSwaggerEndpoint = path.contains("/v3/api-docs") ||
@@ -145,6 +146,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         // Role-based authorization rules
         if (path.startsWith("/api/clinic/")) {
             return authorizeClinicEndpoints(path, userRoles, clinicId, request);
+        } else if (path.startsWith("/api/clinic-admin/")) {
+            return authorizeClinicAdminEndpoints(path, userRoles, clinicId, request);
         } else if (path.startsWith("/api/patient/")) {
             return authorizePatientEndpoints(path, userRoles, clinicId);
         } else if (path.startsWith("/api/notification/")) {
@@ -177,6 +180,47 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Dentists and patients can access some clinic endpoints
         return userRoles.contains("DENTIST") || userRoles.contains("PATIENT");
+    }
+
+    private boolean authorizeClinicAdminEndpoints(String path, List<String> userRoles, String clinicId,
+            ServerHttpRequest request) {
+        // Public endpoints that don't require authentication are already handled by SecurityConfig
+        // These are for authenticated endpoints only
+
+        // System admin has access to everything
+        if (userRoles.contains("SYSTEM_ADMIN")) {
+            return true;
+        }
+
+        // Clinic admin and receptionist can access most clinic admin endpoints
+        boolean hasClinicRole = userRoles.contains("CLINIC_ADMIN") || userRoles.contains("RECEPTIONIST");
+
+        if (hasClinicRole) {
+            // For clinic-specific endpoints, validate clinic access
+            if (path.matches("/api/clinic-admin/clinics/\\d+/.*")) {
+                String pathClinicId = extractClinicIdFromPath(path);
+                return clinicId != null && clinicId.equals(pathClinicId);
+            }
+
+            // For general clinic admin operations (create, update, etc.)
+            return true;
+        }
+
+        // Dentists can access some read-only clinic admin endpoints
+        if (userRoles.contains("DENTIST")) {
+            // Allow dentists to view clinic information and dentist lists
+            return path.matches("/api/clinic-admin/clinics/\\d+") ||
+                   path.matches("/api/clinic-admin/clinics/\\d+/dentists");
+        }
+
+        // Patients can access basic clinic information
+        if (userRoles.contains("PATIENT")) {
+            // Allow patients to view clinic information and dentist lists
+            return path.matches("/api/clinic-admin/clinics/\\d+") ||
+                   path.matches("/api/clinic-admin/clinics/\\d+/dentists");
+        }
+
+        return false;
     }
 
     private boolean authorizePatientEndpoints(String path, List<String> userRoles, String clinicId) {

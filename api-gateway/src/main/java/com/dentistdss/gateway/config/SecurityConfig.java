@@ -41,11 +41,13 @@ public class SecurityConfig {
                     .pathMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                     
                     // Public clinic endpoints
-                    .pathMatchers("/api/clinic/list/all").permitAll()
-                    .pathMatchers("/api/clinic/search").permitAll()
                     .pathMatchers("/api/clinic/*/patients").permitAll() // Public GET for specific clinic
                     .pathMatchers("/api/clinic").permitAll() // Public POST for clinic creation
-                    .pathMatchers("/api/clinic/*/dentists").permitAll() // Public GET for clinic dentists
+
+                    // Public clinic-admin endpoints
+                    .pathMatchers("/api/clinic-admin/clinics").permitAll() // Public GET for all clinics
+                    .pathMatchers("/api/clinic-admin/clinics/*/dentists").permitAll() // Public GET for clinic dentists
+                    .pathMatchers("/api/clinic-admin/clinics/search").permitAll() // Public POST for clinic search
                     
                     // Public GenAI endpoints
                     .pathMatchers("/api/genai/chatbot/help").permitAll()

@@ -109,7 +109,7 @@ docker-compose down -v
 ./test-gateway-security.sh
 
 # Manual tests
-curl http://localhost:8080/api/clinic/list/all  # Public endpoint
+curl http://localhost:8080/api/clinic-admin/clinics  # Public endpoint
 curl http://localhost:8080/api/clinic/1/patients  # Should return 401
 curl -H "Authorization: Bearer TOKEN" http://localhost:8080/api/clinic/1/patients
 ```
@@ -150,7 +150,7 @@ API Gateway handles all JWT validation and authorization. Business services rece
 
 ### Public Endpoints (No Auth Required)
 - Auth: `/api/auth/login`, `/api/auth/signup`, `/oauth2/*`
-- Clinic: `/api/clinic/list/all`, `/api/clinic/search`
+- Clinic: `/api/clinic-admin/clinics`
 - AI Chatbots: `/api/genai/chatbot/*`
 - Health: `/actuator/health`
 
