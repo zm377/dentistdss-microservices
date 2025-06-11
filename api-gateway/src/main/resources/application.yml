@@ -384,7 +384,7 @@ management:
     gateway:
       access: READ_ONLY
     refresh:
-      enabled: true
+      access: unrestricted
   security:
     enabled: false
 

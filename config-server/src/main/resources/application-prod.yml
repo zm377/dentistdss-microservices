@@ -30,7 +30,7 @@ management:
     health:
       show-details: when-authorized
     refresh:
-      enabled: true
+      access: unrestricted
   security:
     enabled: true
 

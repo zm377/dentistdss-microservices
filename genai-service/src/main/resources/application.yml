@@ -63,7 +63,7 @@ management:
     health:
       show-details: always
     refresh:
-      enabled: true
+      access: unrestricted
   jmx:
     exposure:
       exclude: "*"  # Disable JMX to avoid RMI issues

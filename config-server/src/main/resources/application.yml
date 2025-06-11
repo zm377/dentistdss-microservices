@@ -41,7 +41,7 @@ management:
     health:
       show-details: always
     refresh:
-      enabled: true
+      access: unrestricted
   security:
     enabled: false
 
