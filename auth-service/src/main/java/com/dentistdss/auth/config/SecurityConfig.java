@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -16,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import com.dentistdss.auth.security.JwtAuthenticationFilter;
 import com.dentistdss.auth.security.OAuth2LoginSuccessHandler;
 
@@ -60,8 +62,14 @@ public class SecurityConfig {
         }
 
         authRequests.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                // Configure OAuth2 login only for specific paths, not globally
                 .oauth2Login(oauth2Login -> oauth2Login
+                        .loginPage("/oauth2/authorization/google")
                         .successHandler(oAuth2LoginSuccessHandler)
+                )
+                // Set custom authentication entry point to prevent OAuth2 redirects for API endpoints
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
