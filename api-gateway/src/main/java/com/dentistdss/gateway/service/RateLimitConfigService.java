@@ -102,16 +102,16 @@ public class RateLimitConfigService {
     private String buildMatchingConfigUrl(String endpoint, String userRole, Long clinicId) {
         StringBuilder urlBuilder = new StringBuilder(serviceUrl)
                 .append("/api/system-admin/config/rate-limits/match")
-                .append("?endpoint=").append(endpoint);
-        
+                .append("?serviceName=").append(endpoint);
+
         if (userRole != null && !userRole.trim().isEmpty()) {
             urlBuilder.append("&userRole=").append(userRole);
         }
-        
+
         if (clinicId != null) {
             urlBuilder.append("&clinicId=").append(clinicId);
         }
-        
+
         return urlBuilder.toString();
     }
     

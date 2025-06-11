@@ -43,7 +43,21 @@ public class RateLimitConfigService {
     @Cacheable(value = "rateLimitConfigs", key = "'all'")
     public List<RateLimitConfigResponse> getAllConfigurations() {
         log.debug("Retrieving all active rate limit configurations");
-        
+
+        return rateLimitConfigRepository.findByActiveTrueOrderByPriorityDescCreatedAtAsc()
+                .stream()
+                .map(RateLimitConfigResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all active rate limit configurations (alias for getAllConfigurations)
+     * This method is specifically for the API Gateway's rate limit configuration client
+     */
+    @Cacheable(value = "rateLimitConfigs", key = "'active'")
+    public List<RateLimitConfigResponse> getActiveConfigurations() {
+        log.debug("Retrieving all active rate limit configurations for API Gateway");
+
         return rateLimitConfigRepository.findByActiveTrueOrderByPriorityDescCreatedAtAsc()
                 .stream()
                 .map(RateLimitConfigResponse::fromEntity)

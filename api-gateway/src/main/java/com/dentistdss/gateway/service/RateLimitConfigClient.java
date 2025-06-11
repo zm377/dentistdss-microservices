@@ -29,8 +29,9 @@ public interface RateLimitConfigClient {
      */
     @GetMapping("/match")
     ApiResponse<RateLimitConfigDto> findMatchingConfig(
-            @RequestParam String endpoint,
+            @RequestParam String serviceName,
             @RequestParam(required = false) String userRole,
-            @RequestParam(required = false) Long clinicId
+            @RequestParam(required = false) Long clinicId,
+            @RequestParam(required = false) String environment
     );
 }

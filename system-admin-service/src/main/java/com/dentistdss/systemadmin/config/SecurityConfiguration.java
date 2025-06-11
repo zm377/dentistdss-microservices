@@ -37,12 +37,16 @@ public class SecurityConfiguration {
                 // Public endpoints
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                
-                // System administration endpoints - SYSTEM_ADMIN only
+
+                // Rate limit configuration endpoints - allow internal service calls
+                .requestMatchers("/api/system-admin/config/rate-limits/active").permitAll()
+                .requestMatchers("/api/system-admin/config/rate-limits/match").permitAll()
+
+                // Other system administration endpoints - SYSTEM_ADMIN only
                 .requestMatchers("/api/system-admin/config/**").hasRole("SYSTEM_ADMIN")
                 .requestMatchers("/api/system-admin/audit/**").hasRole("SYSTEM_ADMIN")
                 .requestMatchers("/api/system-admin/refresh/**").hasRole("SYSTEM_ADMIN")
-                
+
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
