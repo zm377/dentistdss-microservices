@@ -7,14 +7,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dentistdss.userprofile.dto.ApiResponse;
 import com.dentistdss.userprofile.dto.ApprovalRequestResponse;
 import com.dentistdss.userprofile.dto.ReviewApprovalRequest;
+import com.dentistdss.userprofile.dto.NotificationEmailRequest;
+import com.dentistdss.userprofile.dto.UserApprovalUpdateRequest;
+import com.dentistdss.userprofile.dto.ClinicApprovalUpdateRequest;
 import com.dentistdss.userprofile.model.Role;
 import com.dentistdss.userprofile.model.User;
 import com.dentistdss.userprofile.model.UserApprovalRequest;
 import com.dentistdss.userprofile.repository.UserApprovalRequestRepository;
 import com.dentistdss.userprofile.repository.UserRepository;
+import com.dentistdss.userprofile.client.NotificationServiceClient;
+import com.dentistdss.userprofile.client.AuthServiceClient;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,6 +39,8 @@ public class UserApprovalService {
 
     private final UserRepository userRepository;
     private final UserApprovalRequestRepository approvalRequestRepository;
+    private final NotificationServiceClient notificationServiceClient;
+    private final AuthServiceClient authServiceClient;
 
     @Transactional
     public ApiResponse<ApprovalRequestResponse> createApprovalRequest(Long userId, String requestReason) {
@@ -59,6 +68,9 @@ public class UserApprovalService {
                 .build();
 
         UserApprovalRequest saved = approvalRequestRepository.save(approvalRequest);
+
+        // Send notification to approvers
+        sendApprovalNotification(user, requestedRole);
 
         log.info("Created approval request {} for user {} requesting role {}",
                 saved.getId(), userId, requestedRole);
@@ -92,23 +104,16 @@ public class UserApprovalService {
 
         UserApprovalRequest updatedRequest = approvalRequestRepository.save(approvalRequest);
 
-        // Update user if approved
-        if (reviewRequest.getApproved()) {
-            user.setApprovalStatus(User.ApprovalStatus.APPROVED);
-            user.setApprovedBy(reviewedBy.toString());
-            user.setApprovalDate(LocalDateTime.now());
-            user.setEnabled(true);
+        // Update user approval status via auth-service
+        updateUserApprovalStatus(user, approvalRequest, reviewRequest, reviewedBy);
 
-            // For staff roles, ensure they have the correct role
-            if (approvalRequest.getRequestedRole() != Role.PATIENT) {
-                user.getRoles().add(approvalRequest.getRequestedRole());
-            }
-        } else {
-            user.setApprovalStatus(User.ApprovalStatus.REJECTED);
-            user.setApprovalRejectionReason(reviewRequest.getReviewNotes());
+        // If user is clinic admin, approve and enable clinic info via auth-service
+        if (user.getRoles().contains(Role.CLINIC_ADMIN) && reviewRequest.getApproved()) {
+            updateClinicApprovalStatus(approvalRequest.getClinicId(), reviewedBy);
         }
 
-        userRepository.save(user);
+        // Send notification to user
+        sendApprovalResultNotification(user, reviewRequest.getApproved(), reviewRequest.getReviewNotes());
 
         log.info("Reviewed approval request {} for user {} - {}",
                 requestId, approvalRequest.getUserId(),
@@ -171,12 +176,88 @@ public class UserApprovalService {
     }
 
     private Role determineRequestedRole(User user) {
-        // Logic to determine what role the user is requesting
-        // This is a simplified version - you may want to make this more sophisticated
-        if (user.getRoles().contains(Role.PATIENT)) {
-            return Role.DENTIST; // Patient requesting to become dentist
+        if (user.getRoles().contains(Role.DENTIST)) {
+            return Role.DENTIST;
+        } else if (user.getRoles().contains(Role.RECEPTIONIST)) {
+            return Role.RECEPTIONIST;
+        } else if (user.getRoles().contains(Role.CLINIC_ADMIN)) {
+            return Role.CLINIC_ADMIN;
         }
-        return Role.CLINIC_ADMIN; // Default to clinic admin
+        return Role.PATIENT;
+    }
+
+    private void updateUserApprovalStatus(User user, UserApprovalRequest approvalRequest,
+                                        ReviewApprovalRequest reviewRequest, Long reviewedBy) {
+        UserApprovalUpdateRequest updateRequest = UserApprovalUpdateRequest.builder()
+                .approvalStatus(reviewRequest.getApproved() ? "APPROVED" : "REJECTED")
+                .approvedBy(reviewedBy.toString())
+                .approvalDate(reviewRequest.getApproved() ? LocalDateTime.now() : null)
+                .enabled(reviewRequest.getApproved())
+                .requestedRole(reviewRequest.getApproved() ? approvalRequest.getRequestedRole() : null)
+                .rejectionReason(reviewRequest.getApproved() ? null : reviewRequest.getReviewNotes())
+                .build();
+
+        try {
+            authServiceClient.updateUserApprovalStatus(user.getId(), updateRequest);
+        } catch (Exception e) {
+            log.error("Failed to update user approval status for user {}: {}", user.getId(), e.getMessage());
+        }
+    }
+
+    private void updateClinicApprovalStatus(Long clinicId, Long reviewedBy) {
+        ClinicApprovalUpdateRequest updateRequest = ClinicApprovalUpdateRequest.builder()
+                .approved(true)
+                .approvalBy(reviewedBy)
+                .approvalDate(LocalDateTime.now())
+                .enabled(true)
+                .build();
+
+        try {
+            authServiceClient.updateClinicApprovalStatus(clinicId, updateRequest);
+        } catch (Exception e) {
+            log.error("Failed to update clinic approval status for clinic {}: {}", clinicId, e.getMessage());
+        }
+    }
+
+    private void sendApprovalNotification(User user, Role requestedRole) {
+        // Determine who should be notified
+        List<User> approvers;
+
+        if (requestedRole == Role.CLINIC_ADMIN || user.getClinicId() == null) {
+            // System admin approves clinic admins or users without clinic
+            approvers = userRepository.findByRole(Role.SYSTEM_ADMIN);
+        } else {
+            // Clinic admin approves staff within their clinic
+            approvers = userRepository.findByClinicIdAndRoles(user.getClinicId(), Role.CLINIC_ADMIN);
+        }
+
+        Map<String, String> templateVariables = new HashMap<>();
+        templateVariables.put("user_name", user.getFirstName() + " " + user.getLastName());
+        templateVariables.put("role", requestedRole.toString());
+
+        approvers.forEach(approver -> {
+            try {
+                notificationServiceClient.sendNotificationEmail(
+                        new NotificationEmailRequest(approver.getEmail(), "user_approval_request", templateVariables));
+            } catch (Exception e) {
+                log.error("Failed to send approval notification to {}: {}", approver.getEmail(), e.getMessage());
+            }
+        });
+    }
+
+    private void sendApprovalResultNotification(User user, boolean approved, String reviewNotes) {
+        Map<String, String> templateVariables = new HashMap<>();
+        templateVariables.put("user_name", user.getFirstName() + " " + user.getLastName());
+        templateVariables.put("role", user.getRoles().iterator().next().toString());
+        templateVariables.put("status", approved ? "approved" : "rejected");
+        templateVariables.put("reason", reviewNotes != null ? reviewNotes : "");
+
+        try {
+            notificationServiceClient.sendNotificationEmail(
+                    new NotificationEmailRequest(user.getEmail(), "user_approval_result", templateVariables));
+        } catch (Exception e) {
+            log.error("Failed to send approval result notification to {}: {}", user.getEmail(), e.getMessage());
+        }
     }
 
     private ApprovalRequestResponse toResponse(UserApprovalRequest request) {

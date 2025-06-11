@@ -15,6 +15,8 @@ import com.dentistdss.auth.dto.SignUpRequest;
 import com.dentistdss.auth.dto.SignUpStaffRequest;
 import com.dentistdss.auth.dto.UserResponse;
 import com.dentistdss.auth.dto.VerifyCodeRequest;
+import com.dentistdss.auth.dto.UserApprovalUpdateRequest;
+import com.dentistdss.auth.dto.ClinicApprovalUpdateRequest;
 import com.dentistdss.auth.service.AuthService;
 import com.dentistdss.auth.service.OAuthUserService;
 
@@ -89,5 +91,19 @@ public class AuthController {
     @PostMapping("/password/change")
     public ResponseEntity<ApiResponse<String>> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
         return ResponseEntity.ok(authService.changePassword(changePasswordRequest));
+    }
+
+    @PutMapping("/user/{userId}/approval")
+    public ResponseEntity<ApiResponse<String>> updateUserApprovalStatus(
+            @PathVariable("userId") Long userId,
+            @RequestBody UserApprovalUpdateRequest request) {
+        return ResponseEntity.ok(authService.updateUserApprovalStatus(userId, request));
+    }
+
+    @PutMapping("/clinic/{clinicId}/approval")
+    public ResponseEntity<ApiResponse<String>> updateClinicApprovalStatus(
+            @PathVariable("clinicId") Long clinicId,
+            @RequestBody ClinicApprovalUpdateRequest request) {
+        return ResponseEntity.ok(authService.updateClinicApprovalStatus(clinicId, request));
     }
 }

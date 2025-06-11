@@ -1,5 +1,6 @@
 package com.dentistdss.auth.service;
 
+import com.dentistdss.auth.dto.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -11,16 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.dentistdss.auth.dto.ApiResponse;
-import com.dentistdss.auth.dto.ApprovalRequestResponse;
-import com.dentistdss.auth.dto.AuthResponse;
-import com.dentistdss.auth.dto.ChangePasswordRequest;
-import com.dentistdss.auth.dto.LoginRequest;
-import com.dentistdss.auth.dto.OAuthLoginRequest;
-import com.dentistdss.auth.dto.SignUpClinicAdminRequest;
-import com.dentistdss.auth.dto.SignUpRequest;
-import com.dentistdss.auth.dto.SignUpStaffRequest;
-import com.dentistdss.auth.dto.UserResponse;
 import com.dentistdss.auth.model.AuthProvider;
 import com.dentistdss.auth.model.Clinic;
 import com.dentistdss.auth.model.Role;
@@ -30,7 +21,7 @@ import com.dentistdss.auth.repository.UserRepository;
 import com.dentistdss.auth.security.JwtTokenProvider;
 import com.dentistdss.auth.security.UserPrincipal;
 import com.dentistdss.auth.client.NotificationServiceClient;
-import com.dentistdss.auth.dto.VerificationEmailRequest;
+import com.dentistdss.auth.client.UserProfileServiceClient;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -55,7 +46,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final NotificationServiceClient notificationServiceClient;
-    private final UserApprovalService userApprovalService;
+    private final UserProfileServiceClient userProfileServiceClient;
 
     @Value("${app.email-verification.token-expiry-minutes}")
     private long tokenExpiryMinutes;
@@ -243,7 +234,7 @@ public class AuthService {
         //         signUpStaffRequest.getEmail(),
         //         signUpStaffRequest.getRole());
 
-        ApiResponse<ApprovalRequestResponse> approvalResponse = userApprovalService.createApprovalRequest(savedUser.getId(), "Clinic staff sign up for " + signUpStaffRequest.getClinicName());
+        ApiResponse<ApprovalRequestResponse> approvalResponse = userProfileServiceClient.createApprovalRequest(savedUser.getId(), "Clinic staff sign up for " + signUpStaffRequest.getClinicName()).getBody();
 
         if (approvalResponse.isSuccess()) {
             return ApiResponse.successMessage("Staff registered successfully, waiting for email verification and system adminapproval");
@@ -348,7 +339,7 @@ public class AuthService {
         clinicRepository.save(clinic);
 
         // create a new approval request
-        userApprovalService.createApprovalRequest(clinicAdmin.getId(), "Clinic admin sign up for " + clinic.getName());
+        userProfileServiceClient.createApprovalRequest(clinicAdmin.getId(), "Clinic admin sign up for " + clinic.getName());
 
         return ApiResponse.successMessage(
                 "Clinic admin registered successfully, waiting for email verification and system adminapproval");
@@ -499,5 +490,47 @@ public class AuthService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
         return ApiResponse.successMessage("Password changed successfully");
+    }
+
+    @Transactional
+    public ApiResponse<String> updateUserApprovalStatus(Long userId, UserApprovalUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if ("APPROVED".equals(request.getApprovalStatus())) {
+            user.setApprovalStatus(User.ApprovalStatus.APPROVED);
+            user.setApprovedBy(request.getApprovedBy());
+            user.setApprovalDate(request.getApprovalDate());
+            user.setEnabled(request.getEnabled());
+
+            // Add requested role if provided
+            if (request.getRequestedRole() != null && request.getRequestedRole() != Role.PATIENT) {
+                user.getRoles().add(request.getRequestedRole());
+            }
+        } else if ("REJECTED".equals(request.getApprovalStatus())) {
+            user.setApprovalStatus(User.ApprovalStatus.REJECTED);
+            user.setApprovalRejectionReason(request.getRejectionReason());
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return ApiResponse.successMessage("User approval status updated successfully");
+    }
+
+    @Transactional
+    public ApiResponse<String> updateClinicApprovalStatus(Long clinicId, ClinicApprovalUpdateRequest request) {
+        Clinic clinic = clinicRepository.findById(clinicId)
+                .orElseThrow(() -> new RuntimeException("Clinic not found"));
+
+        clinic.setApproved(request.getApproved());
+        clinic.setApprovalBy(request.getApprovalBy());
+        clinic.setApprovalDate(request.getApprovalDate());
+        clinic.setEnabled(request.getEnabled());
+        clinic.setUpdatedAt(LocalDateTime.now());
+
+        clinicRepository.save(clinic);
+
+        return ApiResponse.successMessage("Clinic approval status updated successfully");
     }
 }
