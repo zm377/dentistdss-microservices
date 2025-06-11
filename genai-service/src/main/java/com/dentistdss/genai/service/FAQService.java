@@ -5,6 +5,8 @@ import com.dentistdss.genai.repository.FAQRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,81 +28,85 @@ public class FAQService {
     /**
      * Search for relevant FAQs based on user input
      */
-    public List<FAQ> searchRelevantFAQs(String userInput, Long clinicId) {
+    public Flux<FAQ> searchRelevantFAQs(String userInput, Long clinicId) {
         if (userInput == null || userInput.trim().isEmpty()) {
-            return Collections.emptyList();
+            return Flux.empty();
         }
-        
+
         String cleanInput = userInput.toLowerCase().trim();
-        
-        // Try different search strategies
-        List<FAQ> results = new ArrayList<>();
-        
-        // 1. Full-text search
-        try {
-            List<FAQ> textSearchResults = faqRepository.findByTextSearch(cleanInput);
-            results.addAll(textSearchResults);
-        } catch (Exception e) {
-            log.warn("Text search failed: {}", e.getMessage());
-        }
-        
+
+        // Try different search strategies and combine results
+        Flux<FAQ> textSearchResults = faqRepository.findByTextSearch(cleanInput)
+                .onErrorResume(e -> {
+                    log.warn("Text search failed: {}", e.getMessage());
+                    return Flux.empty();
+                });
+
         // 2. Keyword-based search
         List<String> keywords = extractKeywords(cleanInput);
-        if (!keywords.isEmpty()) {
-            List<FAQ> keywordResults = faqRepository.findByKeywordsIn(keywords);
-            results.addAll(keywordResults);
-        }
-        
+        Flux<FAQ> keywordResults = keywords.isEmpty() ?
+                Flux.empty() :
+                faqRepository.findByKeywordsIn(keywords);
+
         // 3. Category-based search
         String category = detectCategory(cleanInput);
-        if (category != null) {
-            List<FAQ> categoryResults = faqRepository.findByCategoryAndClinicIdOrGlobal(category, clinicId);
-            results.addAll(categoryResults);
-        }
-        
-        // Remove duplicates and sort by relevance
-        return results.stream()
+        Flux<FAQ> categoryResults = category == null ?
+                Flux.empty() :
+                faqRepository.findByCategoryAndClinicIdOrGlobal(category, clinicId);
+
+        // Combine all search results
+        return Flux.merge(textSearchResults, keywordResults, categoryResults)
                 .distinct()
-                .sorted((faq1, faq2) -> {
-                    // Sort by priority first, then by relevance score
-                    int priorityCompare = Integer.compare(
-                        faq2.getPriority() != null ? faq2.getPriority() : 0,
-                        faq1.getPriority() != null ? faq1.getPriority() : 0
-                    );
-                    if (priorityCompare != 0) return priorityCompare;
-                    
-                    // Calculate relevance score
-                    double score1 = calculateRelevanceScore(faq1, cleanInput);
-                    double score2 = calculateRelevanceScore(faq2, cleanInput);
-                    return Double.compare(score2, score1);
-                })
-                .limit(5) // Return top 5 most relevant FAQs
-                .collect(Collectors.toList());
+                .collectList()
+                .flatMapMany(results -> {
+                    // Sort by relevance
+                    List<FAQ> sortedResults = results.stream()
+                            .sorted((faq1, faq2) -> {
+                                // Sort by priority first, then by relevance score
+                                int priorityCompare = Integer.compare(
+                                    faq2.getPriority() != null ? faq2.getPriority() : 0,
+                                    faq1.getPriority() != null ? faq1.getPriority() : 0
+                                );
+                                if (priorityCompare != 0) return priorityCompare;
+
+                                // Calculate relevance score
+                                double score1 = calculateRelevanceScore(faq1, cleanInput);
+                                double score2 = calculateRelevanceScore(faq2, cleanInput);
+                                return Double.compare(score2, score1);
+                            })
+                            .limit(5) // Return top 5 most relevant FAQs
+                            .collect(Collectors.toList());
+
+                    return Flux.fromIterable(sortedResults);
+                });
     }
     
     /**
      * Get context information for AI agent based on user input
      */
-    public String getApiContextForAgent(String agent, String userInput, Long clinicId) {
+    public Mono<String> getApiContextForAgent(String agent, String userInput, Long clinicId) {
         if (!"help".equalsIgnoreCase(agent)) {
-            return null;
+            return Mono.empty();
         }
-        
-        List<FAQ> relevantFAQs = searchRelevantFAQs(userInput, clinicId);
-        
-        if (relevantFAQs.isEmpty()) {
-            return null;
-        }
-        
-        StringBuilder context = new StringBuilder();
-        context.append("Relevant FAQ Information:\n");
-        
-        for (FAQ faq : relevantFAQs) {
-            context.append("Q: ").append(faq.getQuestion()).append("\n");
-            context.append("A: ").append(faq.getAnswer()).append("\n\n");
-        }
-        
-        return context.toString();
+
+        return searchRelevantFAQs(userInput, clinicId)
+                .collectList()
+                .map(relevantFAQs -> {
+                    if (relevantFAQs.isEmpty()) {
+                        return null;
+                    }
+
+                    StringBuilder context = new StringBuilder();
+                    context.append("Relevant FAQ Information:\n");
+
+                    for (FAQ faq : relevantFAQs) {
+                        context.append("Q: ").append(faq.getQuestion()).append("\n");
+                        context.append("A: ").append(faq.getAnswer()).append("\n\n");
+                    }
+
+                    return context.toString();
+                })
+                .filter(Objects::nonNull);
     }
     
     /**

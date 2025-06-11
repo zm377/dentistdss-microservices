@@ -34,14 +34,12 @@ spring:
         max-lifetime: 1800000
         pool-name: ReportingReplicaHikariPool
 
-  # MongoDB for Report Metadata
+  # MongoDB for Report Metadata and Redis for Caching
   data:
     mongodb:
       uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
       database: dentistdss
-
-  # Redis for Caching
-  data:
+    # Redis for Caching
     redis:
       host: redis
       port: 6379

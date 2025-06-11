@@ -46,9 +46,7 @@ spring:
     mongodb:
       uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
       database: dentistdss
-
-  # Redis for Caching
-  data:
+    # Redis for Caching
     redis:
       host: localhost
       port: 6379

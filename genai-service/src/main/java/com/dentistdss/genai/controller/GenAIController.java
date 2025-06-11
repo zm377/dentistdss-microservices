@@ -11,6 +11,7 @@ import com.dentistdss.genai.service.ChatService;
 import com.dentistdss.genai.service.UserContextService;
 import com.dentistdss.genai.service.FAQService;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -52,10 +53,13 @@ public class GenAIController {
                 log.warn("Invalid clinic ID format: {}", userContext.getClinicId());
             }
         }
-        String faqContext = getApiContextForAgent("help", prompt, clinicId);
 
-        // Use enhanced streaming with context and orchestration
-        return streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, faqContext);
+        // Get FAQ context reactively and then stream
+        return getApiContextForAgent("help", prompt, clinicId)
+                .defaultIfEmpty("") // Provide empty string if no context
+                .flatMapMany(faqContext ->
+                    streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, faqContext)
+                );
     }
 
     @PostMapping(value = "/receptionist", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -212,13 +216,13 @@ public class GenAIController {
     /**
      * Get API context for agent based on user input
      */
-    private String getApiContextForAgent(String agent, String userInput, Long clinicId) {
+    private Mono<String> getApiContextForAgent(String agent, String userInput, Long clinicId) {
         if ("help".equalsIgnoreCase(agent)) {
             // Query FAQ database based on userInput
             return faqService.getApiContextForAgent(agent, userInput, clinicId);
         }
         // Add other agent-specific context fetching here
-        return null;
+        return Mono.empty();
     }
 
 
