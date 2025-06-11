@@ -124,9 +124,18 @@ public class AppointmentService {
             notificationRequest.put("userId", appointment.getPatientId());
             notificationRequest.put("templateName", "appointment_cancelled");
             notificationRequest.put("type", "EMAIL");
-            
+
             Map<String, String> templateVariables = new HashMap<>();
-            templateVariables.put("patient_name", "Patient"); // TODO: Fetch from user service
+
+            // Fetch actual patient name from auth service
+            try {
+                String patientName = authServiceClient.getUserFullName(appointment.getPatientId());
+                templateVariables.put("patient_name", patientName);
+            } catch (Exception e) {
+                log.warn("Failed to fetch patient name for cancellation notification: {}", e.getMessage());
+                templateVariables.put("patient_name", "Patient");
+            }
+
             templateVariables.put("appointment_date", appointment.getAppointmentDate().toString());
             templateVariables.put("cancellation_reason", reason);
             

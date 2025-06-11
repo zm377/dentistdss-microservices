@@ -20,6 +20,7 @@ import com.dentistdss.reporting.dto.ReportResult;
 import com.dentistdss.reporting.model.ReportExecution;
 import com.dentistdss.reporting.model.ReportTemplate;
 import com.dentistdss.reporting.service.ReportingService;
+import com.dentistdss.reporting.util.JwtUtil;
 
 import java.io.File;
 import java.util.List;
@@ -161,7 +162,12 @@ public class ReportingController {
         Long userId = extractUserId(authentication);
         log.debug("Getting executions for clinic: {} by user: {}", clinicId, userId);
         
-        // TODO: Add authorization check for clinic access
+        // Add authorization check for clinic access
+        if (!JwtUtil.hasClinicAccess(authentication, clinicId)) {
+            log.warn("User {} does not have access to clinic {}", userId, clinicId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Access denied to clinic data"));
+        }
         
         List<ReportExecution> executions = reportingService.getClinicReportExecutions(clinicId, page, size);
         
@@ -177,8 +183,12 @@ public class ReportingController {
     public ResponseEntity<ApiResponse<List<ReportTemplate>>> getAvailableTemplates(
             Authentication authentication) {
         
-        // TODO: Extract user roles from authentication
-        List<String> userRoles = List.of("DENTIST", "CLINIC_ADMIN"); // Placeholder
+        // Extract user roles from authentication
+        List<String> userRoles = JwtUtil.extractUserRoles(authentication);
+        if (userRoles.isEmpty()) {
+            log.warn("No roles found for user, using default roles");
+            userRoles = List.of("DENTIST", "CLINIC_ADMIN"); // Fallback for development
+        }
         
         List<ReportTemplate> templates = reportingService.getAvailableTemplates(userRoles);
         
@@ -224,7 +234,13 @@ public class ReportingController {
             
             ReportExecution execution = executionOpt.get();
             
-            // TODO: Add authorization check
+            // Add authorization check - user can only download their own reports or clinic reports if they have access
+            Long currentUserId = extractUserId(authentication);
+            if (!execution.getRequestedBy().equals(currentUserId) &&
+                !JwtUtil.hasClinicAccess(authentication, execution.getClinicId())) {
+                log.warn("User {} attempted to access report execution {} without permission", currentUserId, executionId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
             
             // Find the requested file
             Optional<ReportExecution.GeneratedFile> fileOpt = execution.getGeneratedFiles().stream()
@@ -269,15 +285,11 @@ public class ReportingController {
      * Extract user ID from authentication
      */
     private Long extractUserId(Authentication authentication) {
-        // TODO: Implement proper user ID extraction from JWT token
-        // This is a placeholder implementation
-        if (authentication != null && authentication.getName() != null) {
-            try {
-                return Long.parseLong(authentication.getName());
-            } catch (NumberFormatException e) {
-                log.warn("Could not parse user ID from authentication: {}", authentication.getName());
-            }
+        Long userId = JwtUtil.extractUserId(authentication);
+        if (userId == null) {
+            log.warn("Could not extract user ID from authentication, using default");
+            return 1L; // Fallback for development
         }
-        return 1L; // Placeholder
+        return userId;
     }
 }

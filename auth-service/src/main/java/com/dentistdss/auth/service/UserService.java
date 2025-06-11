@@ -83,39 +83,6 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
-    @Transactional
-    public ApiResponse<UserResponse> updateUserProfile(Long userId, UserUpdateRequest updateRequest) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
-
-        // Update only the allowed fields
-        if (updateRequest.getFirstName() != null) {
-            user.setFirstName(updateRequest.getFirstName());
-        }
-        if (updateRequest.getLastName() != null) {
-            user.setLastName(updateRequest.getLastName());
-        }
-        if (updateRequest.getPhone() != null) {
-            user.setPhone(updateRequest.getPhone());
-        }
-        if (updateRequest.getDateOfBirth() != null) {
-            user.setDateOfBirth(updateRequest.getDateOfBirth());
-        }
-        if (updateRequest.getAddress() != null) {
-            user.setAddress(updateRequest.getAddress());
-        }
-        if (updateRequest.getProfilePictureUrl() != null) {
-            user.setProfilePictureUrl(updateRequest.getProfilePictureUrl());
-        }
-
-        User savedUser = userRepository.save(user);
-        return ApiResponse.success(savedUser.toUserResponse());
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserResponse> getClinicDentists(Long clinicId) {
-        return userRepository.findByClinicIdAndRoles(clinicId, Role.DENTIST).stream()
-                .map(User::toUserResponse)
-                .collect(Collectors.toList());
-    }
+    // User profile management methods moved to user-profile-service
+    // These methods are now handled by UserProfileServiceClient
 }

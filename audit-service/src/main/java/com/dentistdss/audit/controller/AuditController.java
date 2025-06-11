@@ -1,6 +1,8 @@
 package com.dentistdss.audit.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.dentistdss.audit.dto.ApiResponse;
@@ -17,6 +19,7 @@ import java.util.List;
  * @github https://github.com/zm377
  *
  */
+@Slf4j
 @RestController
 @RequestMapping("/audit")
 @RequiredArgsConstructor
@@ -25,8 +28,15 @@ public class AuditController {
     private final AuditService auditService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<AuditEntryResponse>> record(@RequestBody AuditEntryRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(auditService.record(request)));
+    public ResponseEntity<ApiResponse<AuditEntryResponse>> record(@Valid @RequestBody AuditEntryRequest request) {
+        try {
+            log.info("Recording audit entry for user: {}, action: {}", request.getUserId(), request.getAction());
+            AuditEntryResponse response = auditService.record(request);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (Exception e) {
+            log.error("Failed to record audit entry: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to record audit entry"));
+        }
     }
 
     @GetMapping

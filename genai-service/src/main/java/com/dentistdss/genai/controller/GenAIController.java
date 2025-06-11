@@ -9,6 +9,7 @@ import com.dentistdss.genai.model.Conversation;
 import com.dentistdss.genai.repository.ConversationRepository;
 import com.dentistdss.genai.service.ChatService;
 import com.dentistdss.genai.service.UserContextService;
+import com.dentistdss.genai.service.FAQService;
 import reactor.core.publisher.Flux;
 
 import java.time.Instant;
@@ -34,6 +35,7 @@ public class GenAIController {
     private final ChatService chatService;
     private final ConversationRepository conversationRepository;
     private final UserContextService userContextService;
+    private final FAQService faqService;
     private static final int MAX_HISTORY_MESSAGES = 10; // Max 5 turns (user + assistant)
 
     @PostMapping(value = "/help", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -41,8 +43,19 @@ public class GenAIController {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
 
+        // Get FAQ context for the help agent
+        Long clinicId = null;
+        if (userContext.getClinicId() != null) {
+            try {
+                clinicId = Long.parseLong(userContext.getClinicId());
+            } catch (NumberFormatException e) {
+                log.warn("Invalid clinic ID format: {}", userContext.getClinicId());
+            }
+        }
+        String faqContext = getApiContextForAgent("help", prompt, clinicId);
+
         // Use enhanced streaming with context and orchestration
-        return streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, null);
+        return streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, faqContext);
     }
 
     @PostMapping(value = "/receptionist", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -196,15 +209,17 @@ public class GenAIController {
             });
     }
 
-    // private String getApiContextForAgent(String agent, String userInput) {
-    //     if ("help".equalsIgnoreCase(agent)) {
-    //         // TODO: Implement logic to query FAQ database based on userInput
-    //         // e.g., if (userInput.contains("clinic hours")) return "ClinicPolicy: Our clinic is open 9 AM to 5 PM.";
-    //         return null; // Placeholder
-    //     }
-    //     // Add other agent-specific context fetching here
-    //     return null;
-    // }
+    /**
+     * Get API context for agent based on user input
+     */
+    private String getApiContextForAgent(String agent, String userInput, Long clinicId) {
+        if ("help".equalsIgnoreCase(agent)) {
+            // Query FAQ database based on userInput
+            return faqService.getApiContextForAgent(agent, userInput, clinicId);
+        }
+        // Add other agent-specific context fetching here
+        return null;
+    }
 
 
 } 

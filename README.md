@@ -408,7 +408,7 @@ curl http://localhost:8080/actuator/configprops | jq '.configurationProperties'
 ./gradlew test
 
 # Test specific services
-./gradlew :api-gateway:test :genai-service:test :system-service:test
+./gradlew :api-gateway:test :genai-service:test :auth-service:test
 
 # Test configuration refresh
 ./test-config-refresh.sh

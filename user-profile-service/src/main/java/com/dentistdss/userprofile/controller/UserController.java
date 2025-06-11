@@ -37,13 +37,23 @@ public class UserController {
     }
 
     @GetMapping("/{id}/email")
-    public String getUserEmail(@PathVariable Long id) {
-        return userService.getUserEmail(id);
+    public ResponseEntity<String> getUserEmail(@PathVariable Long id) {
+        try {
+            String email = userService.getUserEmail(id);
+            return ResponseEntity.ok(email);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}/name")
-    public String getUserFullName(@PathVariable Long id) {
-        return userService.getUserFullName(id);
+    public ResponseEntity<String> getUserFullName(@PathVariable Long id) {
+        try {
+            String name = userService.getUserFullName(id);
+            return ResponseEntity.ok(name);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}/details")

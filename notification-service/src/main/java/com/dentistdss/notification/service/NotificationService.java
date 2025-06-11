@@ -38,6 +38,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationTemplateRepository templateRepository;
     private final EmailService emailService;
+    private final PushNotificationService pushNotificationService;
     private final ObjectMapper objectMapper;
     
     @Transactional
@@ -107,8 +108,7 @@ public class NotificationService {
                     notification.setSentAt(LocalDateTime.now());
                 }
                 case PUSH -> {
-                    // TODO: Implement push notification service
-                    log.info("Push notification to user {}: {}", notification.getUserId(), notification.getBody());
+                    pushNotificationService.sendPushNotification(notification);
                     notification.setStatus(NotificationStatus.SENT);
                     notification.setSentAt(LocalDateTime.now());
                 }
