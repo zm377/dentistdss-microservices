@@ -1,0 +1,72 @@
+/*
+ * Reporting Service - Build Script
+ * Advanced analytics and reporting microservice for DentistDSS
+ */
+
+description = 'Reporting Service for DentistDSS - Advanced Analytics and Report Generation'
+
+dependencies {
+    // Core Web and Data
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    
+    // Database drivers
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // Cloud Services
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    
+    // Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    
+    // Async Processing & Scheduling
+    implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    implementation 'org.springframework:spring-context-support'
+    
+    // Report Generation Libraries
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+    implementation 'org.apache.poi:poi:5.2.4'
+    implementation 'org.apache.poi:poi-ooxml:5.2.4'
+    implementation 'org.apache.poi:poi-scratchpad:5.2.4'
+    implementation 'com.opencsv:opencsv:5.8'
+    
+    // Charts and Visualization
+    implementation 'org.jfree:jfreechart:1.5.3'
+    
+    // Connection Pooling
+    implementation 'com.zaxxer:HikariCP'
+    
+    // Caching
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    
+    // JSON Processing
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv'
+    
+    // Utilities
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'commons-io:commons-io:2.11.0'
+    
+    // Actuator for monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Profile-based OpenAPI dependency
+    if (project.ext.springdocEnabled) {
+        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    }
+    
+    // Testing dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:mongodb'
+    testImplementation 'org.testcontainers:junit-jupiter'
+}

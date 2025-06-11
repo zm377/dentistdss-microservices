@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: reporting-service-test
+  
+  # Test Database Configuration
+  datasource:
+    primary:
+      url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password: 
+      driver-class-name: org.h2.Driver
+    replica:
+      url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      username: sa
+      password: 
+      driver-class-name: org.h2.Driver
+
+  # Test MongoDB Configuration
+  data:
+    mongodb:
+      database: test_dentistdss
+
+  # JPA Configuration for Tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: true
+
+  # Disable mail for tests
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+
+  # Security Configuration for Tests
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8081/auth/oauth2/jwks
+
+# Cache Configuration for Tests
+cache:
+  caffeine:
+    spec: maximumSize=100,expireAfterWrite=5m
+  redis:
+    ttl: 300
+
+# Reporting Configuration for Tests
+reporting:
+  async:
+    core-pool-size: 2
+    max-pool-size: 5
+    queue-capacity: 10
+  export:
+    temp-directory: ${java.io.tmpdir}/reporting-test
+    max-file-size: 10MB
+  email:
+    from: test@example.com
+    max-recipients: 10
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework.data.jpa: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.testcontainers: INFO
+    root: INFO

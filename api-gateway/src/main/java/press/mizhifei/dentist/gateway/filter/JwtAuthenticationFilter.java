@@ -142,6 +142,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return authorizeGenAIEndpoints(path, userRoles);
         } else if (path.startsWith("/api/chatlogs/")) {
             return authorizeChatLogEndpoints(path, userRoles, clinicId);
+        } else if (path.startsWith("/api/reports/")) {
+            return authorizeReportingEndpoints(path, userRoles, clinicId);
         }
 
         // Default: require authentication but allow access
@@ -202,6 +204,33 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Receptionists can access chat logs for their clinic
         if (userRoles.contains("RECEPTIONIST")) {
+            return clinicId != null;
+        }
+
+        return false;
+    }
+
+    private boolean authorizeReportingEndpoints(String path, List<String> userRoles, String clinicId) {
+        // System admins have full access to all reporting features
+        if (userRoles.contains("SYSTEM_ADMIN")) {
+            return true;
+        }
+
+        // Clinic admins can access reporting for their clinic
+        if (userRoles.contains("CLINIC_ADMIN")) {
+            return clinicId != null;
+        }
+
+        // Dentists can access basic reports for their clinic
+        if (userRoles.contains("DENTIST")) {
+            // Allow access to basic reporting endpoints
+            if (path.contains("/templates") || path.contains("/generate") || path.contains("/executions")) {
+                return clinicId != null;
+            }
+        }
+
+        // Practice managers can access operational reports
+        if (userRoles.contains("PRACTICE_MANAGER")) {
             return clinicId != null;
         }
 

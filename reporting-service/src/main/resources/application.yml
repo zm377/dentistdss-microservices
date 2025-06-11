@@ -1,0 +1,187 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: reporting-service
+  config:
+    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      uri: http://localhost:8888
+      username: ${SPRING_CONFIG_USER}
+      password: ${SPRING_CONFIG_PASS}
+      fail-fast: false
+
+  # Primary Database (PostgreSQL) - Read Replica for Analytics
+  datasource:
+    primary:
+      url: jdbc:postgresql://localhost:5432/dentistdss
+      username: dentistdss
+      password: ${POSTGRES_PASSWORD}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: ReportingHikariPool
+    # Read Replica Configuration (if available)
+    replica:
+      url: jdbc:postgresql://localhost:5432/dentistdss
+      username: dentistdss_readonly
+      password: ${POSTGRES_READONLY_PASSWORD:${POSTGRES_PASSWORD}}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 15
+        minimum-idle: 3
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: ReportingReplicaHikariPool
+
+  # MongoDB for Report Metadata and Templates
+  data:
+    mongodb:
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
+      database: dentistdss
+
+  # Redis for Caching
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    show-sql: false
+
+  # Mail Configuration
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: "*"
+
+  # Security Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVICE_URL:http://localhost:8081}/auth/oauth2/jwks
+
+  # Quartz Scheduler Configuration
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: embedded
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: ReportingScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+            useProperties: false
+            misfireThreshold: 60000
+            tablePrefix: QRTZ_
+            isClustered: true
+            clusterCheckinInterval: 20000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 10
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+# Cache Configuration
+cache:
+  caffeine:
+    spec: maximumSize=1000,expireAfterWrite=30m
+  redis:
+    ttl: 1800 # 30 minutes
+
+# Reporting Configuration
+reporting:
+  async:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 100
+    thread-name-prefix: "reporting-"
+  export:
+    temp-directory: ${java.io.tmpdir}/reporting
+    max-file-size: 50MB
+    cleanup-after-hours: 24
+  email:
+    from: ${MAIL_USERNAME}
+    max-recipients: 50
+    attachment-size-limit: 25MB
+  analytics:
+    default-page-size: 1000
+    max-query-timeout: 300 # 5 minutes
+    materialized-view-refresh-cron: "0 0 2 * * ?" # Daily at 2 AM
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches,scheduledtasks
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"
+
+# OpenAPI/SpringDoc Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+logging:
+  level:
+    press.mizhifei.dentist: DEBUG
+    org.springframework.data.jpa: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.cache: DEBUG
+    org.quartz: INFO
+    root: INFO

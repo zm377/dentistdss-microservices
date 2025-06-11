@@ -167,6 +167,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Reporting Service
+            - id: reporting-service
+              uri: lb://reporting-service
+              predicates:
+                - Path=/api/reports/**
+              filters:
+                - StripPrefix=1
+
             # Admin Server (Spring Boot Admin)
             - id: admin-server
               uri: lb://admin-server
@@ -259,6 +267,14 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # Reporting Service Documentation
+            - id: reporting-service-openapi
+              uri: lb://reporting-service
+              predicates:
+                - Path=/reporting-service/v3/api-docs
+              filters:
+                - StripPrefix=1
+
       # =============================================================================
       # Route Configuration
       # =============================================================================
@@ -309,6 +325,8 @@ springdoc:
         url: /notification-service/v3/api-docs
       - name: chat-log-service
         url: /chat-log-service/v3/api-docs
+      - name: reporting-service
+        url: /reporting-service/v3/api-docs
 
 # =============================================================================
 # Server Configuration

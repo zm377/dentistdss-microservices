@@ -1,0 +1,218 @@
+[
+  {
+    "templateCode": "PATIENT_NO_SHOWS",
+    "name": "Patient No-Show Analysis",
+    "description": "Analyzes patient no-show patterns and trends over time",
+    "category": "CLINICAL",
+    "type": "PATIENT_ANALYTICS",
+    "queryTemplate": "SELECT DATE_TRUNC('day', a.appointment_date) as date, COUNT(*) as total_appointments, COUNT(CASE WHEN a.status = 'NO_SHOW' THEN 1 END) as no_shows, ROUND(COUNT(CASE WHEN a.status = 'NO_SHOW' THEN 1 END) * 100.0 / COUNT(*), 2) as no_show_percentage FROM appointments a WHERE a.clinic_id = ${clinicId} AND a.appointment_date BETWEEN '${startDate}' AND '${endDate}' AND a.status IN ('COMPLETED', 'NO_SHOW', 'CANCELLED') GROUP BY DATE_TRUNC('day', a.appointment_date) ORDER BY date",
+    "parameters": [
+      {
+        "name": "clinicId",
+        "label": "Clinic ID",
+        "type": "CLINIC_ID",
+        "required": true,
+        "description": "The clinic to analyze"
+      },
+      {
+        "name": "startDate",
+        "label": "Start Date",
+        "type": "DATE",
+        "required": true,
+        "description": "Start date for analysis period"
+      },
+      {
+        "name": "endDate",
+        "label": "End Date",
+        "type": "DATE",
+        "required": true,
+        "description": "End date for analysis period"
+      }
+    ],
+    "formatConfigurations": {
+      "PDF": {
+        "template": "standard",
+        "options": {
+          "includeCharts": true,
+          "chartType": "LINE"
+        }
+      },
+      "EXCEL": {
+        "includedColumns": ["date", "total_appointments", "no_shows", "no_show_percentage"],
+        "columnMappings": {
+          "date": "Date",
+          "total_appointments": "Total Appointments",
+          "no_shows": "No Shows",
+          "no_show_percentage": "No Show %"
+        }
+      }
+    },
+    "chartConfigurations": [
+      {
+        "chartId": "no_show_trend",
+        "chartType": "LINE",
+        "title": "No-Show Trend Over Time",
+        "xAxisColumn": "date",
+        "yAxisColumn": "no_show_percentage",
+        "chartOptions": {
+          "showDataPoints": true,
+          "lineColor": "#FF6B6B"
+        }
+      }
+    ],
+    "allowedRoles": ["DENTIST", "CLINIC_ADMIN", "PRACTICE_MANAGER"],
+    "active": true,
+    "version": 1
+  },
+  {
+    "templateCode": "APPOINTMENT_UTILIZATION",
+    "name": "Appointment Utilization Report",
+    "description": "Analyzes appointment scheduling efficiency and capacity utilization",
+    "category": "OPERATIONAL",
+    "type": "APPOINTMENT_METRICS",
+    "queryTemplate": "WITH time_slots AS (SELECT DATE_TRUNC('hour', a.appointment_date) as hour_slot, COUNT(*) as scheduled_appointments, COUNT(CASE WHEN a.status = 'COMPLETED' THEN 1 END) as completed_appointments, AVG(EXTRACT(EPOCH FROM (a.actual_end_time - a.actual_start_time))/60) as avg_duration_minutes FROM appointments a WHERE a.clinic_id = ${clinicId} AND a.appointment_date BETWEEN '${startDate}' AND '${endDate}' GROUP BY DATE_TRUNC('hour', a.appointment_date)) SELECT ts.hour_slot, ts.scheduled_appointments, ts.completed_appointments, ts.avg_duration_minutes, ROUND(ts.scheduled_appointments * 100.0 / 8, 2) as utilization_percentage FROM time_slots ts ORDER BY ts.hour_slot",
+    "parameters": [
+      {
+        "name": "clinicId",
+        "label": "Clinic ID",
+        "type": "CLINIC_ID",
+        "required": true,
+        "description": "The clinic to analyze"
+      },
+      {
+        "name": "startDate",
+        "label": "Start Date",
+        "type": "DATE",
+        "required": true,
+        "description": "Start date for analysis period"
+      },
+      {
+        "name": "endDate",
+        "label": "End Date",
+        "type": "DATE",
+        "required": true,
+        "description": "End date for analysis period"
+      }
+    ],
+    "formatConfigurations": {
+      "PDF": {
+        "template": "standard",
+        "options": {
+          "includeCharts": true,
+          "chartType": "BAR"
+        }
+      },
+      "EXCEL": {
+        "includedColumns": ["hour_slot", "scheduled_appointments", "completed_appointments", "utilization_percentage"]
+      }
+    },
+    "allowedRoles": ["CLINIC_ADMIN", "PRACTICE_MANAGER"],
+    "active": true,
+    "version": 1
+  },
+  {
+    "templateCode": "REVENUE_ANALYSIS",
+    "name": "Revenue Analysis Report",
+    "description": "Comprehensive financial analysis including revenue trends and payment status",
+    "category": "FINANCIAL",
+    "type": "REVENUE_ANALYSIS",
+    "queryTemplate": "SELECT DATE_TRUNC('day', b.created_at) as date, COUNT(DISTINCT b.id) as total_bills, SUM(b.total_amount) as total_revenue, SUM(CASE WHEN b.status = 'PAID' THEN b.total_amount ELSE 0 END) as paid_revenue, SUM(CASE WHEN b.status = 'PENDING' THEN b.total_amount ELSE 0 END) as pending_revenue, AVG(b.total_amount) as avg_bill_amount, COUNT(DISTINCT b.patient_id) as unique_patients FROM bills b WHERE b.clinic_id = ${clinicId} AND b.created_at BETWEEN '${startDate}' AND '${endDate}' GROUP BY DATE_TRUNC('day', b.created_at) ORDER BY date",
+    "parameters": [
+      {
+        "name": "clinicId",
+        "label": "Clinic ID",
+        "type": "CLINIC_ID",
+        "required": true,
+        "description": "The clinic to analyze"
+      },
+      {
+        "name": "startDate",
+        "label": "Start Date",
+        "type": "DATE",
+        "required": true,
+        "description": "Start date for analysis period"
+      },
+      {
+        "name": "endDate",
+        "label": "End Date",
+        "type": "DATE",
+        "required": true,
+        "description": "End date for analysis period"
+      }
+    ],
+    "formatConfigurations": {
+      "PDF": {
+        "template": "financial",
+        "options": {
+          "includeCharts": true,
+          "chartType": "BAR",
+          "includeSummary": true
+        }
+      },
+      "EXCEL": {
+        "includedColumns": ["date", "total_revenue", "paid_revenue", "pending_revenue", "avg_bill_amount"]
+      }
+    },
+    "chartConfigurations": [
+      {
+        "chartId": "revenue_trend",
+        "chartType": "BAR",
+        "title": "Daily Revenue Trend",
+        "xAxisColumn": "date",
+        "yAxisColumn": "total_revenue",
+        "chartOptions": {
+          "barColor": "#4ECDC4"
+        }
+      }
+    ],
+    "allowedRoles": ["CLINIC_ADMIN", "PRACTICE_MANAGER"],
+    "active": true,
+    "version": 1
+  },
+  {
+    "templateCode": "AI_USAGE_STATISTICS",
+    "name": "AI Usage Statistics",
+    "description": "Analyzes AI system usage, token consumption, and effectiveness metrics",
+    "category": "ANALYTICS",
+    "type": "AI_USAGE_STATISTICS",
+    "queryTemplate": "SELECT cl.agent_type, cl.interaction_type, DATE_TRUNC('day', cl.timestamp) as date, COUNT(*) as interaction_count, AVG((cl.token_usage->>'totalTokens')::numeric) as avg_tokens, SUM((cl.token_usage->>'totalTokens')::numeric) as total_tokens, AVG((cl.token_usage->>'responseTimeMs')::numeric) as avg_response_time_ms, COUNT(CASE WHEN (cl.phi_redaction->>'phiDetected')::boolean = true THEN 1 END) as phi_redactions FROM chat_logs cl WHERE (${clinicId} IS NULL OR cl.clinic_id = ${clinicId}) AND cl.timestamp BETWEEN '${startDate}' AND '${endDate}' GROUP BY cl.agent_type, cl.interaction_type, DATE_TRUNC('day', cl.timestamp) ORDER BY date, cl.agent_type, cl.interaction_type",
+    "parameters": [
+      {
+        "name": "clinicId",
+        "label": "Clinic ID",
+        "type": "CLINIC_ID",
+        "required": false,
+        "description": "The clinic to analyze (leave empty for system-wide analysis)"
+      },
+      {
+        "name": "startDate",
+        "label": "Start Date",
+        "type": "DATE",
+        "required": true,
+        "description": "Start date for analysis period"
+      },
+      {
+        "name": "endDate",
+        "label": "End Date",
+        "type": "DATE",
+        "required": true,
+        "description": "End date for analysis period"
+      }
+    ],
+    "formatConfigurations": {
+      "PDF": {
+        "template": "analytics",
+        "options": {
+          "includeCharts": true,
+          "chartType": "PIE"
+        }
+      },
+      "EXCEL": {
+        "includedColumns": ["agent_type", "interaction_type", "date", "interaction_count", "total_tokens", "avg_response_time_ms"]
+      }
+    },
+    "allowedRoles": ["SYSTEM_ADMIN", "CLINIC_ADMIN"],
+    "active": true,
+    "version": 1
+  }
+]
