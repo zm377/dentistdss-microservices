@@ -114,8 +114,8 @@ public interface ClinicRepository extends JpaRepository<Clinic, Long> {
     /**
      * Find recently created clinics
      */
-    @Query("SELECT c FROM Clinic c WHERE " +
-           "c.createdAt >= CURRENT_DATE - :days " +
-           "ORDER BY c.createdAt DESC")
+    @Query(value = "SELECT * FROM clinics c WHERE " +
+           "c.created_at >= CURRENT_TIMESTAMP - INTERVAL '1 day' * :days " +
+           "ORDER BY c.created_at DESC", nativeQuery = true)
     List<Clinic> findRecentlyCreated(@Param("days") int days);
 }
