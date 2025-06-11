@@ -15,7 +15,7 @@ import java.util.List;
  * @email zm377@uowmail.edu.au
  * @github https://github.com/zm377
  */
-@FeignClient(name = "system-service", path = "/system/rate-limit")
+@FeignClient(name = "system-admin-service", path = "/api/system-admin/config/rate-limits", url = "${rate-limit.config.service-url:http://system-admin-service:8086}")
 public interface RateLimitConfigClient {
     
     /**

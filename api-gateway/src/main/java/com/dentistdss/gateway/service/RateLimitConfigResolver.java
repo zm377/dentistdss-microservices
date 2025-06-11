@@ -9,8 +9,10 @@ import com.dentistdss.gateway.dto.RateLimitConfigDto;
  * Rate Limit Configuration Resolver
  *
  * Responsible for resolving the appropriate rate limit configuration
- * for a given request context. Uses cached configurations to avoid
- * circular dependencies with Feign clients.
+ * for a given request context. Follows Single Responsibility Principle.
+ *
+ * Updated to use RateLimitConfigService instead of Feign client to avoid
+ * circular dependency with Spring Cloud Gateway's filteringWebHandler.
  *
  * @author zhifeimi
  * @email zm377@uowmail.edu.au
@@ -21,8 +23,7 @@ import com.dentistdss.gateway.dto.RateLimitConfigDto;
 @RequiredArgsConstructor
 public class RateLimitConfigResolver {
 
-    private final RateLimitConfigCacheService configCacheService;
-
+    private final RateLimitConfigService configService;
     // Default rate limit configuration (fallback)
     private static final long DEFAULT_MAX_TOKENS = 10_000;
     private static final long DEFAULT_TIME_WINDOW_SECONDS = 180; // 3 minutes
@@ -32,9 +33,9 @@ public class RateLimitConfigResolver {
      */
     public RateLimitConfigDto resolveConfig(String endpoint, String userRole, Long clinicId) {
         try {
-            RateLimitConfigDto config = configCacheService.findMatchingConfig(endpoint, userRole, clinicId);
+            RateLimitConfigDto config = configService.findMatchingConfig(endpoint, userRole, clinicId);
 
-            if (config != null && Boolean.TRUE.equals(config.getActive())) {
+            if (config != null) {
                 log.debug("Resolved rate limit config: {} for endpoint: {}",
                         config.getConfigName(), endpoint);
                 return config;
@@ -43,12 +44,10 @@ public class RateLimitConfigResolver {
                 return createDefaultConfig(endpoint);
             }
         } catch (Exception e) {
-            log.warn("Error resolving rate limit config for endpoint: {}, using default. Error: {}",
-                    endpoint, e.getMessage());
+            log.warn("Error fetching rate limit config for endpoint: {}, using default: {}", endpoint, e.getMessage());
             return createDefaultConfig(endpoint);
         }
     }
-
     /**
      * Create default rate limit configuration
      */
