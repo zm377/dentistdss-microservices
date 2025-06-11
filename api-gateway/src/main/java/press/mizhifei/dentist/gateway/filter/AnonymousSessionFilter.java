@@ -16,8 +16,6 @@ import press.mizhifei.dentist.gateway.security.JwtTokenProvider;
 import press.mizhifei.dentist.gateway.service.AnonymousSessionService;
 import reactor.core.publisher.Mono;
 
-import java.util.Set;
-
 /**
  * Filter for managing user sessions and header propagation
  * Handles both anonymous and authenticated users, ensuring proper session tracking
@@ -34,17 +32,6 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
 
     private final AnonymousSessionService anonymousSessionService;
     private final JwtTokenProvider jwtTokenProvider;
-
-    // Public endpoints that should receive session tracking
-    private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
-            "/api/genai/chatbot/help",
-            "/api/genai/chatbot/triage",
-            "/api/genai/chatbot/receptionist",
-            "/api/genai/chatbot/aidentist",
-            "/api/genai/chatbot/documentation/summarize",
-            "/api/clinic/list/all",
-            "/api/clinic/search"
-    );
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -67,28 +54,29 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
                 .flatMap(authentication -> {
                     if (authentication != null && authentication.isAuthenticated()) {
                         // Handle authenticated user
-                        return handleAuthenticatedUser(exchange, chain, existingSessionId, authentication);
+                        return handleAuthenticatedUserWithResponse(exchange, chain, existingSessionId, authentication);
                     } else {
                         // Handle anonymous user
-                        return handleAnonymousUser(exchange, chain, existingSessionId);
+                        return handleAnonymousUserWithResponse(exchange, chain, existingSessionId);
                     }
                 })
                 .switchIfEmpty(Mono.<Void>defer(() -> {
                     // No security context - handle as anonymous user
-                    return handleAnonymousUser(exchange, chain, existingSessionId);
+                    return handleAnonymousUserWithResponse(exchange, chain, existingSessionId);
                 }));
     }
 
     /**
      * Handles authenticated users by linking their session to their user account
+     * Also adds session ID to response headers for frontend
      */
-    private Mono<Void> handleAuthenticatedUser(ServerWebExchange exchange, GatewayFilterChain chain,
-                                             String existingSessionId, Authentication authentication) {
+    private Mono<Void> handleAuthenticatedUserWithResponse(ServerWebExchange exchange, GatewayFilterChain chain,
+                                                          String existingSessionId, Authentication authentication) {
         ServerHttpRequest request = exchange.getRequest();
 
         // Extract JWT token and user information
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+        if (StringUtils.hasText(authHeader) && authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
             String userId = jwtTokenProvider.getUserIdFromJWT(token);
@@ -113,18 +101,24 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
             log.debug("Authenticated user session - SessionID: {}, UserID: {}",
                     sessionInfo.getSessionId(), userId);
 
-            return chain.filter(exchange.mutate().request(modifiedRequest).build());
+            // Add session ID to response headers for frontend
+            return chain.filter(exchange.mutate().request(modifiedRequest).build())
+                    .then(Mono.fromRunnable(() -> {
+                        exchange.getResponse().getHeaders().add("X-Session-ID", sessionInfo.getSessionId());
+                        log.debug("Added session ID to response headers: {}", sessionInfo.getSessionId());
+                    }));
         }
 
         // Fallback to anonymous handling if token extraction fails
-        return handleAnonymousUser(exchange, chain, existingSessionId);
+        return handleAnonymousUserWithResponse(exchange, chain, existingSessionId);
     }
 
     /**
      * Handles anonymous users by creating or retrieving their session
+     * Also adds session ID to response headers for frontend
      */
-    private Mono<Void> handleAnonymousUser(ServerWebExchange exchange, GatewayFilterChain chain,
-                                         String existingSessionId) {
+    private Mono<Void> handleAnonymousUserWithResponse(ServerWebExchange exchange, GatewayFilterChain chain,
+                                                      String existingSessionId) {
         // Get or create session
         AnonymousSessionService.SessionInfo sessionInfo =
                 anonymousSessionService.getOrCreateSession(existingSessionId);
@@ -140,7 +134,12 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
 
         log.debug("Anonymous user session - SessionID: {}", sessionInfo.getSessionId());
 
-        return chain.filter(exchange.mutate().request(modifiedRequest).build());
+        // Add session ID to response headers for frontend
+        return chain.filter(exchange.mutate().request(modifiedRequest).build())
+                .then(Mono.fromRunnable(() -> {
+                    exchange.getResponse().getHeaders().add("X-Session-ID", sessionInfo.getSessionId());
+                    log.debug("Added session ID to response headers: {}", sessionInfo.getSessionId());
+                }));
     }
 
     /**
@@ -155,13 +154,6 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui") ||
                path.startsWith("/admin");
-    }
-
-    /**
-     * Checks if the endpoint is public and should receive session tracking
-     */
-    private boolean isPublicEndpoint(String path) {
-        return PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith);
     }
 
     @Override

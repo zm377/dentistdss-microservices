@@ -49,10 +49,6 @@ public class SecurityConfig {
                     
                     // Public GenAI endpoints
                     .pathMatchers("/api/genai/chatbot/help").permitAll()
-                    .pathMatchers("/api/genai/chatbot/triage").permitAll()
-                    .pathMatchers("/api/genai/chatbot/receptionist").permitAll()
-                    .pathMatchers("/api/genai/chatbot/aidentist").permitAll()
-                    .pathMatchers("/api/genai/chatbot/documentation/summarize").permitAll()
                     
                     // Admin server
                     .pathMatchers("/admin", "/admin/**").permitAll();

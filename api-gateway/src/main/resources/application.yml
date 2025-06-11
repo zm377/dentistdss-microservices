@@ -38,7 +38,9 @@ spring:
                   - HEAD
                 allowedHeaders: "*"
                 allowCredentials: true
-                exposedHeaders: "Authorization"
+                exposedHeaders:
+                  - "Authorization"
+                  - "X-Session-ID"
                 maxAge: 3600
           routes:
             # =============================================================================
