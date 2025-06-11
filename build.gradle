@@ -1,0 +1,133 @@
+/*
+ * DentistDSS Microservices - Root Build Script
+ * Migrated from Maven parent POM
+ */
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
+}
+
+// Configure all projects
+allprojects {
+    group = 'press.mizhifei.dentist'
+    version = '0.9.2'
+    
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'Spring Milestones'
+            url = 'https://repo.spring.io/milestone'
+        }
+        maven {
+            name = 'Spring Snapshots'
+            url = 'https://repo.spring.io/snapshot'
+        }
+        maven {
+            name = 'Central Portal Snapshots'
+            url = 'https://central.sonatype.com/repository/maven-snapshots/'
+        }
+    }
+}
+
+// Configure subprojects (all microservices)
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+    
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+    
+    // Dependency Management (equivalent to Maven dependencyManagement)
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+            mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+            mavenBom "com.google.cloud:spring-cloud-gcp-dependencies:${springCloudGcpVersion}"
+            mavenBom "com.google.cloud:libraries-bom:${googleCloudLibrariesVersion}"
+        }
+        
+        dependencies {
+            dependency "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocOpenApiVersion}"
+            dependency "org.springdoc:springdoc-openapi-starter-webflux-ui:${springdocOpenApiVersion}"
+            dependency "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+            dependency "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+            dependency "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+            dependency "com.google.api-client:google-api-client:${googleApiClientVersion}"
+            dependency "com.google.http-client:google-http-client-jackson2:${googleHttpClientVersion}"
+            dependency "com.bucket4j:bucket4j_jdk17-core:${bucket4jVersion}"
+            dependency "io.hypersistence:hypersistence-utils-hibernate-63:${hypersistenceUtilsVersion}"
+        }
+    }
+    
+    // Common dependencies for all services
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+    
+    // Profile-based configuration (equivalent to Maven profiles)
+    def currentProfile = project.findProperty('profile') ?: 'dev'
+    
+    if (currentProfile == 'dev' || currentProfile == 'docker') {
+        ext.springdocEnabled = true
+    } else if (currentProfile == 'prod') {
+        ext.springdocEnabled = false
+    }
+    
+    // Test configuration
+    tasks.named('test') {
+        useJUnitPlatform()
+        testLogging {
+            events "passed", "skipped", "failed"
+        }
+    }
+    
+    // Spring Boot plugin configuration
+    tasks.named('bootJar') {
+        archiveClassifier = ''
+        enabled = true
+    }
+    
+    tasks.named('jar') {
+        archiveClassifier = 'plain'
+        enabled = true
+    }
+    
+    // Compilation options
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.compilerArgs += ['-parameters']
+    }
+}
+
+// Root project tasks
+tasks.register('buildAll') {
+    description = 'Build all subprojects'
+    dependsOn subprojects.collect { "${it.path}:build" }
+}
+
+tasks.register('bootJarAll') {
+    description = 'Build all Spring Boot JARs'
+    dependsOn subprojects.collect { "${it.path}:bootJar" }
+}
+
+// Wrapper configuration
+wrapper {
+    gradleVersion = '8.11.1'
+    distributionType = Wrapper.DistributionType.BIN
+}

@@ -1,0 +1,17 @@
+/*
+ * Discovery Server (Eureka) - Build Script
+ * Migrated from Maven pom.xml
+ */
+
+description = 'Spring Cloud Discovery Server (Eureka)'
+
+dependencies {
+    // Core Eureka Server
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    
+    // Profile-based OpenAPI dependency
+    if (project.ext.springdocEnabled) {
+        implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui'
+    }
+}

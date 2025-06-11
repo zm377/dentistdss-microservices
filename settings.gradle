@@ -1,0 +1,41 @@
+/*
+ * DentistDSS Microservices - Gradle Settings
+ * Migrated from Maven multi-module project
+ */
+
+// Apply toolchain resolver plugin
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'dentistdss-microservices'
+
+// Include all microservice modules
+include 'discovery-server'
+include 'config-server'
+include 'api-gateway'
+include 'auth-service'
+include 'clinic-service'
+include 'appointment-service'
+include 'clinical-records-service'
+include 'admin-server'
+include 'genai-service'
+include 'user-profile-service'
+include 'system-service'
+include 'audit-service'
+include 'notification-service'
+
+// Enable Gradle features for performance
+enableFeaturePreview('TYPESAFE_PROJECT_ACCESSORS')
+
+// Configure build cache for performance
+buildCache {
+    local {
+        enabled = true
+        directory = file("${rootDir}/.gradle/build-cache")
+        removeUnusedEntriesAfterDays = 30
+    }
+}
+
+// Configure Gradle daemon for better performance
+gradle.startParameter.maxWorkerCount = Runtime.runtime.availableProcessors()

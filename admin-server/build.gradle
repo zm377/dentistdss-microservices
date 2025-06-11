@@ -1,0 +1,23 @@
+/*
+ * Admin Server - Build Script
+ * Migrated from Maven pom.xml
+ */
+
+description = 'Spring Boot Admin Server for DentistDSS'
+
+dependencies {
+    // Spring Boot Admin Server
+    implementation "de.codecentric:spring-boot-admin-starter-server:${springBootAdminVersion}"
+    
+    // Cloud Services
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    
+    // Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // Profile-based OpenAPI dependency
+    if (project.ext.springdocEnabled) {
+        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    }
+}

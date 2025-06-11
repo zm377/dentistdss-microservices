@@ -1,0 +1,17 @@
+/*
+ * Config Server - Build Script
+ * Migrated from Maven pom.xml
+ */
+
+description = 'Spring Cloud Config Server'
+
+dependencies {
+    // Core Config Server
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    
+    // Profile-based OpenAPI dependency
+    if (project.ext.springdocEnabled) {
+        implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    }
+}

@@ -1,15 +1,43 @@
 HELP.md
+
+# =============================================================================
+# Build System Support (Maven + Gradle)
+# Both Maven and Gradle are supported for rollback capability
+# =============================================================================
+
+# Maven build directories and files
 target/
 **/target/
 !.mvn/wrapper/maven-wrapper.jar
+
+# Gradle build directories and files
+build/
+**/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+.gradle/
+**/.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Gradle daemon and cache
+gradle-app.setting
+
+# Project-specific files
 privkey.pem
 fullchain.pem
 generate-ssl-key.sh
 lessons.txt
-
 logs/
 .env
 c.sh
+
+# Migration and documentation temporary files
+*_MIGRATION_*.md
+*_COMPLETION_*.md
+*_SUMMARY_*.md
+*_QUICK_REFERENCE*.md
+*_UPDATE_SUMMARY*.md
+migration-*.log
 
 # Exclude target directories but keep specific files needed for builds
 # !**/src/main/**/target/
@@ -37,12 +65,48 @@ c.sh
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
 
+### Gradle Additional ###
+# Gradle build scan cache
+.gradle/buildOutputCleanup/
+.gradle/vcs-1/
+
+# Gradle wrapper (keep the jar but ignore other wrapper files if needed)
+# gradle/wrapper/gradle-wrapper.properties (uncomment if you want to ignore wrapper properties)
+
+# Gradle build reports and test results
+**/build/reports/
+**/build/test-results/
+**/build/jacoco/
+
+# Gradle temporary files
+**/build/tmp/
+
+# Gradle build cache directory (local cache)
+.gradle/build-cache/
+
+# Gradle performance and profiling
+.gradle/profile/
+gradle-profiler/
+build-profile-*.html
+
+# Gradle build scans (if generated locally)
+build-scan-data/
+
+# Gradle init scripts (if any)
+init.gradle.kts
+init.gradle
+
 ### macOS ###
 .DS_Store
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Linux ###
+*~
