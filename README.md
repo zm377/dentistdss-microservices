@@ -549,3 +549,9 @@ For detailed information:
 - **Performance Optimization**: Async processing with caching and read replicas
 - **Security Compliance**: HIPAA-compliant data handling and audit trails
 
+### Circular Dependency Resolution (API Gateway)
+- **Issue**: Resolved circular dependency in rate limiting system (RateLimitFilter → RateLimitService → RateLimitConfigResolver → RateLimitConfigClient → filteringWebHandler → RateLimitFilter)
+- **Solution**: Replaced Feign client with direct RestTemplate service calls to system-admin-service
+- **Benefits**: Eliminated dependency cycle, improved performance with direct HTTP calls, enhanced reliability with proper fallbacks
+- **Implementation**: Created RateLimitConfigService with dedicated RestTemplate bean and proper timeout configurations
+
