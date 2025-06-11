@@ -29,7 +29,7 @@ eureka:
 # Docker-specific logging
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud.config: INFO
     org.eclipse.jgit: WARN
     root: INFO

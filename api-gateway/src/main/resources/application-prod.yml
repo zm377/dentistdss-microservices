@@ -231,7 +231,7 @@ springdoc:
 # =============================================================================
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework: WARN
     org.springframework.cloud.gateway: INFO
     reactor.netty: WARN

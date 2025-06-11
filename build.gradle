@@ -11,7 +11,7 @@ plugins {
 
 // Configure all projects
 allprojects {
-    group = 'press.mizhifei.dentist'
+    group = 'com.dentistdss'
     version = '0.9.2'
     
     repositories {

@@ -1,0 +1,61 @@
+package com.dentistdss.auth.security;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import com.dentistdss.auth.model.User;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+/**
+ *
+ * @author zhifeimi
+ * @email zm377@uowmail.edu.au
+ * @github https://github.com/zm377
+ *
+ */
+@Data
+@AllArgsConstructor
+@Builder
+public class UserPrincipal implements UserDetails {
+    private Long id;
+    private String email;
+    private String password;
+    private String firstName;
+    private String lastName;
+    private Collection<? extends GrantedAuthority> authorities;
+    private Long clinicId;
+    private boolean enabled;
+    private boolean accountNonExpired;
+    private boolean credentialsNonExpired;
+    private boolean accountNonLocked;
+
+    public static UserPrincipal create(User user) {
+        Collection<GrantedAuthority> authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toList());
+
+        return UserPrincipal.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .password(user.getPassword())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .authorities(authorities)
+                .clinicId(user.getClinicId())
+                .enabled(user.isEnabled())
+                .accountNonExpired(user.isAccountNonExpired())
+                .credentialsNonExpired(user.isCredentialsNonExpired())
+                .accountNonLocked(user.isAccountNonLocked())
+                .build();
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+}

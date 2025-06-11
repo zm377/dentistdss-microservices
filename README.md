@@ -9,6 +9,29 @@ A microservices-based Dentist Decision Support System with centralized JWT authe
 
 Centralized security architecture where API Gateway handles JWT validation while microservices focus on business logic.
 
+### Package Structure
+
+The DentistDSS microservices follow enterprise Java naming conventions:
+
+- **Group ID**: `com.dentistdss`
+- **Base Package**: `com.dentistdss.*`
+- **Service Packages**:
+  - `com.dentistdss.gateway` - API Gateway
+  - `com.dentistdss.auth` - Authentication Service
+  - `com.dentistdss.clinicadmin` - Clinic Administration Service
+  - `com.dentistdss.systemadmin` - System Administration Service
+  - `com.dentistdss.genai` - GenAI Service
+  - `com.dentistdss.chatlog` - Chat Log Service
+  - `com.dentistdss.reporting` - Reporting Service
+  - `com.dentistdss.userprofile` - User Profile Service
+  - `com.dentistdss.appointment` - Appointment Service
+  - `com.dentistdss.clinicalrecords` - Clinical Records Service
+  - `com.dentistdss.audit` - Audit Service
+  - `com.dentistdss.notification` - Notification Service
+  - `com.dentistdss.discovery` - Discovery Server
+  - `com.dentistdss.config` - Config Server
+  - `com.dentistdss.admin` - Admin Server
+
 ## Services (11 microservices + 2 databases)
 
 ### Databases
@@ -470,6 +493,19 @@ For detailed information:
 - **[VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md)** - Testing and verification guide
 
 ## Recent Major Updates
+
+### Enterprise Package Structure Standardization (v0.9.2)
+- **Group ID Standardization**: Migrated from `press.mizhifei.dentist` to `com.dentistdss` across all 15+ microservices
+- **Package Structure Refactoring**: Complete refactoring of all Java packages to follow enterprise naming conventions
+- **Configuration Updates**: Updated all Spring configuration files, component scanning, and package references
+- **Build System Updates**: Updated Gradle build files and dependency management configurations
+- **Comprehensive Testing**: Verified compilation, testing, and functionality across all services
+- **Benefits Achieved**:
+  - **Enterprise Compliance**: Follows standard enterprise Java package naming conventions
+  - **Improved Maintainability**: Consistent package structure across all microservices
+  - **Better Organization**: Clear separation and organization of service components
+  - **Professional Standards**: Aligns with industry best practices for microservices architecture
+  - **Future-Proof**: Establishes foundation for enterprise-grade development and deployment
 
 ### System Service Refactoring to System Admin Service
 - **Service Renaming**: Refactored `system-service` to `system-admin-service` for comprehensive system administration

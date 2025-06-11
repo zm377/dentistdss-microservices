@@ -70,7 +70,7 @@ springdoc:
 # =============================================================================
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud.openfeign: WARN
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: WARN

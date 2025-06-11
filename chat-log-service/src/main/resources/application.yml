@@ -72,7 +72,7 @@ phi:
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG
     org.springframework.data.mongodb: DEBUG
     org.springframework.security: DEBUG
     root: INFO

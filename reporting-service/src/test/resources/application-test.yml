@@ -65,7 +65,7 @@ reporting:
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG
     org.springframework.data.jpa: DEBUG
     org.springframework.data.mongodb: DEBUG
     org.testcontainers: INFO

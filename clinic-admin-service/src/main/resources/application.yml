@@ -57,5 +57,5 @@ springdoc:
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG
     org.springframework: DEBUG

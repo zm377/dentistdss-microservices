@@ -72,7 +72,7 @@ springdoc:
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG
 
 # App Configuration
 app:

@@ -354,7 +354,7 @@ reactor:
 # =============================================================================
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG
     org.springframework: DEBUG
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: INFO

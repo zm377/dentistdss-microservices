@@ -53,7 +53,7 @@ springdoc:
 # =============================================================================
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud.openfeign: INFO
     org.hibernate.SQL: WARN
   pattern:

@@ -45,4 +45,4 @@ management:
 
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
+    com.dentistdss: DEBUG

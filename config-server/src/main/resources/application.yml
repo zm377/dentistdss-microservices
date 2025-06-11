@@ -49,7 +49,7 @@ management:
 # Logging Configuration
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud.config: DEBUG
     org.springframework.security: INFO
     org.eclipse.jgit: WARN

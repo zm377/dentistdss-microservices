@@ -344,7 +344,7 @@ reactor:
 # =============================================================================
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework: INFO
     org.springframework.cloud.gateway: INFO
     reactor.netty: WARN

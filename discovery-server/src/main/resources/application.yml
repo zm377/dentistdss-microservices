@@ -21,7 +21,7 @@ eureka:
 # Configure logging for components
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud: INFO
     org.springframework.web.reactive: INFO
     reactor.netty: INFO

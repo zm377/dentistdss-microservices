@@ -53,7 +53,7 @@ springdoc:
 # Production logging - More restrictive
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework.cloud.config: WARN
     org.springframework.security: WARN
     org.eclipse.jgit: ERROR

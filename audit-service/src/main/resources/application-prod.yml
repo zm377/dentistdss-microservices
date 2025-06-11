@@ -47,6 +47,6 @@ springdoc:
 
 logging:
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework: INFO
     root: INFO

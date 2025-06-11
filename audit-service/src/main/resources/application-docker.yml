@@ -40,5 +40,5 @@ management:
     exposure:
       exclude: "*"  # Disable JMX to avoid RMI issues
   level:
-    press.mizhifei.dentist: INFO
+    com.dentistdss: INFO
     org.springframework: INFO
