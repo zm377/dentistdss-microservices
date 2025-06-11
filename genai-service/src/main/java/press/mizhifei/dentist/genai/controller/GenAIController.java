@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import press.mizhifei.dentist.genai.model.Conversation;
 import press.mizhifei.dentist.genai.repository.ConversationRepository;
 import press.mizhifei.dentist.genai.service.ChatService;
-import press.mizhifei.dentist.genai.service.TokenRateLimiter;
 import press.mizhifei.dentist.genai.service.UserContextService;
 import reactor.core.publisher.Flux;
 
@@ -33,7 +32,6 @@ import java.util.UUID;
 public class GenAIController {
 
     private final ChatService chatService;
-    private final TokenRateLimiter tokenRateLimiter;
     private final ConversationRepository conversationRepository;
     private final UserContextService userContextService;
     private static final int MAX_HISTORY_MESSAGES = 10; // Max 5 turns (user + assistant)
@@ -43,11 +41,6 @@ public class GenAIController {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
 
-        long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
-            return Flux.just(limitMessage());
-        }
-
         // Use enhanced streaming with context and orchestration
         return streamAndPersistWithContext("help", userContext.getSessionId(), userContext, prompt, null);
     }
@@ -56,10 +49,6 @@ public class GenAIController {
     public Flux<String> receptionist(@RequestBody String prompt, ServerHttpRequest request) {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
-        long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
-            return Flux.just(limitMessage());
-        }
         // String apiProvidedContext = getApiContextForAgent("receptionist", prompt);
         return streamAndPersist("receptionist", userContext.getSessionId(), userContext.getUserId(), prompt, null);
     }
@@ -68,10 +57,6 @@ public class GenAIController {
     public Flux<String> aiDentist(@RequestBody String prompt, ServerHttpRequest request) {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
-        long tokens = estimateTokens(prompt);
-        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
-            return Flux.just(limitMessage());
-        }
         // String apiProvidedContext = getApiContextForAgent("aidentist", prompt);
         return streamAndPersist("aidentist", userContext.getSessionId(), userContext.getUserId(), prompt, null);
     }
@@ -80,10 +65,6 @@ public class GenAIController {
     public Flux<String> triage(@RequestBody String symptoms, ServerHttpRequest request) {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
-        long tokens = estimateTokens(symptoms);
-        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
-            return Flux.just(limitMessage());
-        }
         // String apiProvidedContext = getApiContextForAgent("triage", symptoms);
         return streamAndPersist("triage", userContext.getSessionId(), userContext.getUserId(), symptoms, null);
     }
@@ -92,10 +73,6 @@ public class GenAIController {
     public Flux<String> summarizeDocumentation(@RequestBody String notes, ServerHttpRequest request) {
         // Extract user context from headers
         UserContextService.UserContext userContext = userContextService.extractUserContext(request);
-        long tokens = estimateTokens(notes);
-        if (!tokenRateLimiter.tryConsume(userContext.getSessionId(), tokens)) {
-            return Flux.just(limitMessage());
-        }
         // For documentation, the notes themselves can be part of the apiProvidedContext or the main prompt
         // Depending on how ChatService is structured, it might be better to pass notes as 'prompt' and use context for specific instructions if any.
         return streamAndPersist("documentation", userContext.getSessionId(), userContext.getUserId(), notes, null);
@@ -229,11 +206,5 @@ public class GenAIController {
     //     return null;
     // }
 
-    private long estimateTokens(String text) {
-        return Math.max(1, text.length() / 4);
-    }
 
-    private String limitMessage() {
-        return "You have reached the maximal inquiries. For a better user experience for every one of our users, we kindly suggest you ask more questions 3 minutes later.";
-    }
 } 

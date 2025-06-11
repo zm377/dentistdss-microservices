@@ -16,8 +16,7 @@ dependencies {
     // Spring AI with Google Vertex AI backend
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
     
-    // Rate limiting
-    implementation 'com.bucket4j:bucket4j_jdk17-core'
+
     
     // MongoDB Reactive
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
