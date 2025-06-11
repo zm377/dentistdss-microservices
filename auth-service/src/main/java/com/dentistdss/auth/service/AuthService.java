@@ -257,7 +257,7 @@ public class AuthService {
         // if user is not exist, create a new user
         User clinicAdmin;
         Optional<User> existingUser = userRepository.findByEmail(signUpClinicAdminRequest.getEmail());
-        if (!existingUser.isPresent()) {
+        if (existingUser.isEmpty()) {
             clinicAdmin = User.builder()
                     .firstName(signUpClinicAdminRequest.getFirstName())
                     .lastName(signUpClinicAdminRequest.getLastName())
@@ -300,7 +300,7 @@ public class AuthService {
         // if the clinic is not exist, create a new clinic
         Clinic clinic;
         Optional<Clinic> existingClinic = clinicRepository.findByEmail(signUpClinicAdminRequest.getBusinessEmail());
-        if (!existingClinic.isPresent()) {
+        if (existingClinic.isEmpty()) {
             clinic = Clinic.builder()
                     .name(signUpClinicAdminRequest.getClinicName())
                     .address(signUpClinicAdminRequest.getAddress())
@@ -357,7 +357,7 @@ public class AuthService {
     @Transactional
     public ApiResponse<String> resendVerificationCode(String email) {
         Optional<User> existingUser = userRepository.findByEmail(email);
-        if (!existingUser.isPresent()) {
+        if (existingUser.isEmpty()) {
             return ApiResponse.error("User not found");
         }
         User user = existingUser.get();
