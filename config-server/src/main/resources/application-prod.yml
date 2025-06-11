@@ -5,7 +5,7 @@ spring:
     config:
       server:
         git:
-          uri: ${CONFIG_GIT_URI:https://github.com/zm377/dentistdss-config}
+          uri: ${CONFIG_GIT_URI:https://github.com/zm377/dentistdss-microservices-config}
           default-label: main
           clone-on-start: true
           force-pull: true
