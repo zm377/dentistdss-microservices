@@ -104,7 +104,18 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
      * Check if rate limiting should be skipped for this path
      */
     private boolean shouldSkipRateLimit(String path) {
-        return EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith);
+        // Check standard excluded endpoints
+        boolean isStandardExcluded = EXCLUDED_ENDPOINTS.stream().anyMatch(path::startsWith);
+
+        // Check for service-specific Swagger/OpenAPI endpoints
+        boolean isSwaggerEndpoint = path.contains("/v3/api-docs") ||
+                                   path.contains("/swagger-ui") ||
+                                   path.endsWith("/v3/api-docs") ||
+                                   path.matches(".*/v3/api-docs.*") ||
+                                   path.matches(".*-service/v3/api-docs.*") ||
+                                   path.matches(".*-service/swagger-ui.*");
+
+        return isStandardExcluded || isSwaggerEndpoint;
     }
     
     /**

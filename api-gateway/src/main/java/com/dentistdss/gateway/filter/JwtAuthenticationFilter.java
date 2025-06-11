@@ -113,7 +113,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      * Check if the endpoint is public and doesn't require authentication
      */
     private boolean isPublicEndpoint(String path) {
-        return PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith);
+        // Check standard public endpoints
+        boolean isStandardPublic = PUBLIC_ENDPOINTS.stream().anyMatch(path::startsWith);
+
+        // Check for service-specific Swagger/OpenAPI endpoints
+        boolean isSwaggerEndpoint = path.contains("/v3/api-docs") ||
+                                   path.contains("/swagger-ui") ||
+                                   path.endsWith("/v3/api-docs") ||
+                                   path.matches(".*/v3/api-docs.*") ||
+                                   path.matches(".*-service/v3/api-docs.*") ||
+                                   path.matches(".*-service/swagger-ui.*");
+
+        return isStandardPublic || isSwaggerEndpoint;
     }
 
     /**
