@@ -21,6 +21,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
 
+
+
 eureka:
   client:
     serviceUrl:
@@ -40,11 +42,6 @@ management:
       show-details: always
     refresh:
       access: unrestricted
-  jmx:
-    exposure:
-      exclude: "*"  # Disable JMX to avoid RMI issues
-  security:
-    enabled: false
 
 # OpenAPI/SpringDoc Configuration - enabled for development
 springdoc:
@@ -54,8 +51,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+    # Configure Swagger UI to use API Gateway by default
+    config-url: /v3/api-docs/swagger-config
+    try-it-out-enabled: true
+
+
 
 logging:
   level:
-    com.dentistdss: DEBUG
-    org.springframework: DEBUG
+    '[com.dentistdss]': DEBUG
+    '[org.springframework]': DEBUG

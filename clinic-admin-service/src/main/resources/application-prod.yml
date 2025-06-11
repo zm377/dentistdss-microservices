@@ -39,11 +39,6 @@ management:
       show-details: when-authorized
     refresh:
       access: unrestricted
-  jmx:
-    exposure:
-      exclude: "*"  # Disable JMX to avoid RMI issues
-  security:
-    enabled: true
 
 # OpenAPI/SpringDoc Configuration - DISABLED for production
 springdoc:
@@ -54,6 +49,6 @@ springdoc:
 
 logging:
   level:
-    com.dentistdss: INFO
-    org.springframework: INFO
+    '[com.dentistdss]': INFO
+    '[org.springframework]': INFO
     root: INFO
