@@ -37,9 +37,14 @@ eureka:
 management:
   endpoints:
     web:
+      base-path: /actuator
       exposure:
-        include: health,info,metrics
+        include: health,info,refresh,env,configprops,metrics
   endpoint:
+  security:
+    enabled: false
+    refresh:
+      enabled: true
     health:
       show-details: always
   jmx:

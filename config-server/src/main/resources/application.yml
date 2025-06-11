@@ -5,37 +5,67 @@ spring:
   application:
     name: config-server
   profiles:
-    active: native
+    active: git
   cloud:
     config:
       server:
         bootstrap: true
-        # Keep the native configuration for backward compatibility
+        git:
+          uri: ${CONFIG_GIT_URI:https://github.com/zm377/dentistdss-config}
+          default-label: main
+          clone-on-start: true
+          force-pull: true
+          timeout: 10
+          search-paths: '{application}'
+          # Authentication for private repositories
+          username: ${CONFIG_GIT_USERNAME:}
+          password: ${CONFIG_GIT_PASSWORD:}
+        # Keep native as fallback
         native:
           search-locations: classpath:/config
 
   security:
     user:
-      name: ${SPRING_CONFIG_USER}
-      password: ${SPRING_CONFIG_PASS}
+      name: ${SPRING_CONFIG_USER:configuser}
+      password: ${SPRING_CONFIG_PASS:configpass}
 
 
-# Common Actuator Configuration
+# Enhanced Actuator Configuration for Config Server
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,refresh,env,configprops,beans
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
+    refresh:
+      enabled: true
+  security:
+    enabled: false
 
 
 # Logging Configuration
 logging:
   level:
-    press.mizhifei.dentist: DEBUG
-    org.springframework: DEBUG
+    press.mizhifei.dentist: INFO
+    org.springframework.cloud.config: DEBUG
+    org.springframework.security: INFO
+    org.eclipse.jgit: WARN
+    root: INFO
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
 
 
 

@@ -369,12 +369,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway,refresh
+        include: health,info,gateway,refresh,env,configprops
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
     gateway:
       access: READ_ONLY
+    refresh:
+      enabled: true
+  security:
+    enabled: false
 
 
 

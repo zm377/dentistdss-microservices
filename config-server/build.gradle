@@ -9,9 +9,20 @@ dependencies {
     // Core Config Server
     implementation 'org.springframework.cloud:spring-cloud-config-server'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-    
+
+    // Security and Actuator
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Git support (included in config-server but explicit for clarity)
+    implementation 'org.eclipse.jgit:org.eclipse.jgit'
+
     // Profile-based OpenAPI dependency
     if (project.ext.springdocEnabled) {
         implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
     }
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }

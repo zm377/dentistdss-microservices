@@ -213,32 +213,253 @@ Images published to Docker Hub: `zm377/dentistdss-microservices:<service>-<tag>`
 - Automatic failover and load balancing
 - Configuration-driven provider management
 
-## Configuration
+## Configuration Management
 
-### AI Provider Configuration
+### Spring Cloud Config Server
+
+The system uses Spring Cloud Config Server for centralized configuration management following 12-factor app principles.
+
+#### Configuration Sources
+- **External Git Repository**: Primary configuration source (recommended for production)
+- **Local Classpath**: Fallback configuration source
+- **Environment Variables**: Override sensitive data and environment-specific settings
+
+#### Configuration Hierarchy (highest to lowest priority)
+1. Environment variables
+2. `{service}-{profile}.yml` from Git repository
+3. `{service}.yml` from Git repository
+4. `application-{profile}.yml` from Git repository
+5. `application.yml` from Git repository
+6. Local classpath configurations
+
+#### Setup External Configuration Repository
+
+1. **Create Git Repository**: Create a repository (e.g., `dentistdss-config`) with the following structure:
+```
+dentistdss-config/
+├── application.yml                    # Global defaults
+├── application-dev.yml               # Development environment
+├── application-docker.yml            # Docker environment
+├── application-prod.yml              # Production environment
+├── api-gateway/
+│   ├── api-gateway.yml               # Service-specific config
+│   ├── api-gateway-dev.yml
+│   ├── api-gateway-docker.yml
+│   └── api-gateway-prod.yml
+├── genai-service/
+│   ├── genai-service.yml
+│   └── genai-service-{profile}.yml
+└── [other-services]/
+    ├── {service}.yml
+    └── {service}-{profile}.yml
+```
+
+2. **Configure Config Server**: Set environment variables:
 ```bash
-# Required
+CONFIG_GIT_URI=https://github.com/your-org/dentistdss-config
+CONFIG_GIT_USERNAME=your_username  # For private repos
+CONFIG_GIT_PASSWORD=your_token      # For private repos
+```
+
+3. **Hot Reload Configuration**: Use refresh endpoints to update configuration without restart:
+```bash
+# Refresh specific service
+curl -X POST http://localhost:8080/actuator/refresh
+
+# Refresh all services (via API Gateway)
+curl -X POST http://localhost:8080/management/refresh-all
+```
+
+### Environment Variables
+
+#### Core Configuration
+```bash
+# Config Server
+CONFIG_GIT_URI=https://github.com/your-org/dentistdss-config
+CONFIG_GIT_USERNAME=your_username
+CONFIG_GIT_PASSWORD=your_token
+SPRING_CONFIG_USER=configuser
+SPRING_CONFIG_PASS=configpass
+
+# Service Discovery
+EUREKA_URI=http://localhost:8761/eureka
+
+# Database Configuration
+POSTGRES_PASSWORD=your_postgres_password
+POSTGRES_READONLY_PASSWORD=your_readonly_password
+MONGO_INITDB_ROOT_PASSWORD=your_mongo_password
+REDIS_PASSWORD=your_redis_password
+
+# Security
+JWT_SECRET=your_jwt_secret_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+#### AI Provider Configuration
+```bash
+# OpenAI (Required)
 OPENAI_API_KEY=your_openai_api_key
 
-# Optional (Vertex AI)
+# Google Vertex AI (Optional)
 VERTEX_AI_ENABLED=false
 VERTEX_AI_PROJECT_ID=your_gcp_project_id
 VERTEX_AI_LOCATION=us-central1
+GEMINI_MODEL=gemini-2.5-pro-preview-05-06
+
+# Email Configuration
+MAIL_HOST=smtp.gmail.com
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+```
+
+#### Environment-Specific Variables
+
+**Development:**
+```bash
+SPRING_PROFILES_ACTIVE=dev
+EUREKA_URI=http://localhost:8761/eureka
+FRONTEND_URL=http://localhost:3000
+```
+
+**Docker:**
+```bash
+SPRING_PROFILES_ACTIVE=docker
+EUREKA_URI=http://discovery-server:8761/eureka
+POSTGRES_HOST=postgres
+MONGO_HOST=mongo
+REDIS_HOST=redis
+```
+
+**Production:**
+```bash
+SPRING_PROFILES_ACTIVE=prod
+EUREKA_URI=https://discovery.yourdomain.com/eureka
+FRONTEND_URL=https://yourdomain.com
+HOSTNAME=${HOSTNAME}
+```
+
+## Configuration Refresh and Hot Reload
+
+### Automatic Configuration Refresh
+
+The system supports hot configuration reload without service restarts:
+
+#### Manual Refresh
+```bash
+# Refresh specific service configuration
+curl -X POST http://localhost:8080/actuator/refresh
+
+# Refresh API Gateway configuration
+curl -X POST http://localhost:8080/actuator/refresh
+
+# Check current configuration
+curl http://localhost:8080/actuator/configprops
+curl http://localhost:8080/actuator/env
+```
+
+#### Webhook-Based Refresh (Production)
+Configure Git repository webhooks to automatically refresh configuration:
+
+1. **GitHub Webhook**: Configure webhook URL: `https://your-domain.com/monitor`
+2. **GitLab Webhook**: Configure webhook URL: `https://your-domain.com/monitor`
+3. **Automatic Refresh**: Services automatically refresh when configuration changes
+
+#### Configuration Validation
+```bash
+# Verify config server is accessible
+curl http://localhost:8888/actuator/health
+
+# Test configuration retrieval
+curl http://localhost:8888/api-gateway/dev
+curl http://localhost:8888/genai-service/docker
+
+# Check service configuration
+curl http://localhost:8080/actuator/configprops | jq '.configurationProperties'
 ```
 
 ## Testing
 
 ```bash
-# Run tests
+# Run all tests
 ./gradlew test
 
 # Test specific services
-./gradlew :api-gateway:test :genai-service:test
+./gradlew :api-gateway:test :genai-service:test :system-service:test
+
+# Test configuration refresh
+./test-config-refresh.sh
 
 # Test API endpoints
 curl -X POST http://localhost:8080/api/genai/chatbot/help \
   -H "Content-Type: application/json" \
   -d '"What are your clinic hours?"'
+
+# Test rate limiting
+curl -X POST http://localhost:8080/api/genai/help \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_token" \
+  -d '"Test rate limiting"'
+```
+
+## Advanced Features
+
+### Rate Limiting
+- **Centralized Rate Limiting**: Implemented at API Gateway level
+- **Dynamic Configuration**: Rate limits configurable via system-service
+- **Role-Based Limits**: Different limits for different user roles
+- **Token-Based Limiting**: Intelligent token consumption estimation for AI services
+
+### Reporting and Analytics
+- **Advanced Analytics Engine**: Complex SQL queries with read replica optimization
+- **Multi-Format Reports**: PDF, Excel, CSV with professional formatting
+- **Automated Scheduling**: Configurable report schedules with email delivery
+- **Performance Optimization**: Async processing, caching, and materialized views
+
+### Chat Logging and Audit
+- **Comprehensive Chat Logging**: All AI interactions logged with PHI redaction
+- **Token Usage Tracking**: Detailed token consumption and cost analysis
+- **Audit Trail**: Complete audit trail for compliance and monitoring
+- **Performance Metrics**: Response times, success rates, and usage patterns
+
+## Troubleshooting
+
+### Common Issues
+
+#### Config Server Connection Issues
+```bash
+# Check config server health
+curl http://localhost:8888/actuator/health
+
+# Verify Git repository access
+curl http://localhost:8888/actuator/env | grep git
+
+# Check service registration
+curl http://localhost:8761/eureka/apps
+```
+
+#### Configuration Not Refreshing
+```bash
+# Verify refresh endpoint is enabled
+curl http://localhost:8080/actuator/refresh
+
+# Check configuration properties
+curl http://localhost:8080/actuator/configprops
+
+# Force refresh all services
+curl -X POST http://localhost:8080/management/refresh-all
+```
+
+#### Rate Limiting Issues
+```bash
+# Check rate limit configuration
+curl http://localhost:8086/system/rate-limit/active
+
+# Clear rate limit cache
+curl -X POST http://localhost:8080/management/rate-limit/cache/clear
+
+# Check rate limit statistics
+curl http://localhost:8080/management/rate-limit/stats
 ```
 
 ## Documentation
@@ -247,4 +468,24 @@ For detailed information:
 - **[ARCHITECTURE_GUIDE.md](ARCHITECTURE_GUIDE.md)** - Comprehensive architecture guide
 - **[OAUTH_CONSOLIDATION_SUMMARY.md](OAUTH_CONSOLIDATION_SUMMARY.md)** - OAuth consolidation details
 - **[VERIFICATION_CHECKLIST.md](VERIFICATION_CHECKLIST.md)** - Testing and verification guide
+
+## Recent Major Updates
+
+### Spring Cloud Config Server Implementation
+- **Externalized Configuration**: All configuration moved to external Git repository
+- **12-Factor App Compliance**: Complete separation of configuration from code
+- **Hot Reload Capabilities**: Configuration refresh without service restarts
+- **Environment-Specific Configs**: Proper configuration hierarchy for dev/docker/prod
+
+### Rate Limiting Refactoring
+- **Centralized Rate Limiting**: Moved from service-level to API Gateway
+- **Dynamic Configuration**: Rate limits configurable via system-service APIs
+- **Role-Based Limiting**: Different limits for different user roles and clinics
+- **Performance Optimization**: Distributed rate limiting with Redis support
+
+### Reporting Service Integration
+- **Advanced Analytics**: Comprehensive reporting with multi-format generation
+- **Email Delivery**: Automated report delivery with professional formatting
+- **Performance Optimization**: Async processing with caching and read replicas
+- **Security Compliance**: HIPAA-compliant data handling and audit trails
 

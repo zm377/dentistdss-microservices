@@ -38,13 +38,18 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,refresh,env,configprops
+      base-path: /actuator
   endpoint:
     health:
       show-details: always
+    refresh:
+      enabled: true
   jmx:
     exposure:
       exclude: "*"  # Disable JMX to avoid RMI issues
+  security:
+    enabled: false
 
 springdoc:
   api-docs:

@@ -9,7 +9,8 @@ dependencies {
     // Core Eureka Server
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-server'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     // Profile-based OpenAPI dependency
     if (project.ext.springdocEnabled) {
         implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui'

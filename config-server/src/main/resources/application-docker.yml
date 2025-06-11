@@ -1,36 +1,35 @@
-server:
-  port: 8888
-
 spring:
-  application:
-    name: config-server
+  profiles:
+    active: git
   cloud:
     config:
       server:
         git:
-          uri: https://github.com/zm377/dentistdss-microservices-config
+          uri: ${CONFIG_GIT_URI:https://github.com/zm377/dentistdss-config}
           default-label: main
-        # Use the File System Backend to avoid git pulling. Enable "native" profile in the Config Server.
+          clone-on-start: true
+          force-pull: true
+          timeout: 10
+          search-paths: '{application}'
+          username: ${CONFIG_GIT_USERNAME:}
+          password: ${CONFIG_GIT_PASSWORD:}
+        # Keep native as fallback
         native:
-          searchLocations: file:///${GIT_REPO}
-  security:
-    user:
-      name: ${SPRING_CONFIG_USER}
-      password: ${SPRING_CONFIG_PASS}
+          search-locations: classpath:/config
 
-# Common Actuator Configuration
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: always
+# Eureka Client Configuration for Docker
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://discovery-server:8761/eureka}
+  instance:
+    prefer-ip-address: true
+    hostname: config-server
 
-# Logging Configuration
+# Docker-specific logging
 logging:
   level:
     press.mizhifei.dentist: INFO
-    org.springframework.cloud: INFO
-    org.springframework.web: INFO 
+    org.springframework.cloud.config: INFO
+    org.eclipse.jgit: WARN
+    root: INFO

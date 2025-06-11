@@ -25,3 +25,17 @@ logging:
     org.springframework.cloud: INFO
     org.springframework.web.reactive: INFO
     reactor.netty: INFO
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh,env,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    refresh:
+      enabled: true
+  security:
+    enabled: false
