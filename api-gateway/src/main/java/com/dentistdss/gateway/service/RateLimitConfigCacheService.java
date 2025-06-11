@@ -1,8 +1,9 @@
 package com.dentistdss.gateway.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Rate Limit Configuration Cache Service
- * 
+ *
  * Manages cached rate limit configurations to break the circular dependency
  * between rate limiting components and Feign clients. Loads configurations
  * asynchronously after application startup and refreshes them periodically.
@@ -27,10 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RateLimitConfigCacheService {
-    
-    private final RateLimitConfigClient configClient;
+
+    @Autowired
+    private ApplicationContext applicationContext;
     
     // Thread-safe cache for configurations
     private final Map<String, RateLimitConfigDto> configCache = new ConcurrentHashMap<>();
@@ -43,7 +44,16 @@ public class RateLimitConfigCacheService {
     @EventListener(ApplicationReadyEvent.class)
     public void initializeCache() {
         log.info("Initializing rate limit configuration cache...");
-        refreshCache();
+        // Use a separate thread to avoid any potential circular dependency issues
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000); // Wait 2 seconds for all beans to be fully initialized
+                refreshCache();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Cache initialization interrupted");
+            }
+        }, "rate-limit-cache-init").start();
     }
     
     /**
@@ -82,6 +92,8 @@ public class RateLimitConfigCacheService {
      */
     private void refreshCache() {
         try {
+            // Get the Feign client lazily to avoid circular dependency
+            RateLimitConfigClient configClient = applicationContext.getBean(RateLimitConfigClient.class);
             ApiResponse<List<RateLimitConfigDto>> response = configClient.getActiveConfigurations();
             
             if (isValidResponse(response)) {
