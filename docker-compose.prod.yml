@@ -43,6 +43,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dentistdss-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a ${REDIS_PASSWORD} ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # --- Micro-services pulled from Docker Hub (retagged by deploy.sh) ---
   config-server:
     image: dentistdss_config-server:latest  # produced by deploy.sh retagging
@@ -81,10 +101,14 @@ services:
     restart: always
     depends_on:
       - discovery-server
+      - redis
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - CA_STOREPASS=${CA_STOREPASS}
       - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
@@ -99,12 +123,16 @@ services:
     depends_on:
       - api-gateway
       - postgres
+      - redis
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
       - EUREKA_URI=http://discovery-server:8761/eureka
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
       - JWT_RSA_PRIVATE_KEY=${JWT_RSA_PRIVATE_KEY}
@@ -327,6 +355,7 @@ services:
       - api-gateway
       - postgres
       - mongo
+      - redis
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
@@ -334,6 +363,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_READONLY_PASSWORD=${POSTGRES_READONLY_PASSWORD}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
       - MAIL_HOST=${MAIL_HOST}
@@ -348,6 +380,8 @@ volumes:
   postgres_data:
     driver: local
   mongo_data:
+    driver: local
+  redis_data:
     driver: local
 
 # Added network definition
