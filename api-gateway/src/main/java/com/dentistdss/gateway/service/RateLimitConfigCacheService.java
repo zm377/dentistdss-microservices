@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import com.dentistdss.gateway.dto.ApiResponse;
 import com.dentistdss.gateway.dto.RateLimitConfigDto;
 
 import java.util.List;
@@ -31,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RateLimitConfigCacheService {
 
     @Autowired
-    private ApplicationContext applicationContext;
+    private RateLimitConfigService rateLimitConfigService;
     
     // Thread-safe cache for configurations
     private final Map<String, RateLimitConfigDto> configCache = new ConcurrentHashMap<>();
@@ -92,33 +91,32 @@ public class RateLimitConfigCacheService {
      */
     private void refreshCache() {
         try {
-            // Get the Feign client lazily to avoid circular dependency
-            RateLimitConfigClient configClient = applicationContext.getBean(RateLimitConfigClient.class);
-            ApiResponse<List<RateLimitConfigDto>> response = configClient.getActiveConfigurations();
-            
-            if (isValidResponse(response)) {
+            // Use RateLimitConfigService instead of Feign client to avoid HttpMessageConverters issue
+            List<RateLimitConfigDto> configurations = rateLimitConfigService.getActiveConfigurations();
+
+            if (configurations != null && !configurations.isEmpty()) {
                 Map<String, RateLimitConfigDto> newCache = new ConcurrentHashMap<>();
-                
-                for (RateLimitConfigDto config : response.getData()) {
+
+                for (RateLimitConfigDto config : configurations) {
                     if (Boolean.TRUE.equals(config.getActive())) {
                         String key = buildCacheKey(
-                            config.getEndpointPattern(), 
-                            config.getUserRole(), 
+                            config.getEndpointPattern(),
+                            config.getUserRole(),
                             config.getClinicId()
                         );
                         newCache.put(key, config);
                     }
                 }
-                
+
                 // Replace the entire cache atomically
                 configCache.clear();
                 configCache.putAll(newCache);
                 cacheInitialized.set(true);
-                
-                log.info("Successfully refreshed rate limit configuration cache with {} configurations", 
+
+                log.info("Successfully refreshed rate limit configuration cache with {} configurations",
                         newCache.size());
             } else {
-                log.warn("Failed to refresh rate limit configuration cache: invalid response");
+                log.warn("Failed to refresh rate limit configuration cache: no configurations returned");
             }
         } catch (Exception e) {
             log.error("Error refreshing rate limit configuration cache: {}", e.getMessage(), e);
@@ -185,14 +183,7 @@ public class RateLimitConfigCacheService {
         return keyBuilder.toString();
     }
     
-    /**
-     * Check if the API response is valid
-     */
-    private boolean isValidResponse(ApiResponse<List<RateLimitConfigDto>> response) {
-        return response != null && 
-               response.isSuccess() && 
-               response.getData() != null;
-    }
+
     
     /**
      * Get cache status for monitoring
