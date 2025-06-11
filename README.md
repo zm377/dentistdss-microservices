@@ -37,7 +37,7 @@ Centralized security architecture where API Gateway handles JWT validation while
 ### Prerequisites
 - Docker and Docker Compose
 - JDK 21 (for local development)
-- Maven
+- Gradle (wrapper included)
 
 ### Local Development
 ```bash
@@ -158,7 +158,7 @@ public ResponseEntity<?> myEndpoint(HttpServletRequest request) {
 ```bash
 # Local development
 cd <service-name>
-../mvnw spring-boot:run
+../gradlew bootRun
 
 # Docker development
 docker-compose up --build -d <service-name>
@@ -230,7 +230,10 @@ VERTEX_AI_LOCATION=us-central1
 
 ```bash
 # Run tests
-./mvnw test -pl api-gateway,genai-service
+./gradlew test
+
+# Test specific services
+./gradlew :api-gateway:test :genai-service:test
 
 # Test API endpoints
 curl -X POST http://localhost:8080/api/genai/chatbot/help \

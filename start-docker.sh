@@ -78,7 +78,7 @@ echo -e "   Profile: $PROFILE | Build: $BUILD_MODE | Skip: $SKIP_BUILD"
 # Build services
 if [[ "$SKIP_BUILD" == "false" ]]; then
   echo -e "${YELLOW}Building with profile: $PROFILE${NC}"
-  ./mvnw clean package -P"$PROFILE" -DskipTests || {
+  ./gradlew clean bootJar -Pprofile="$PROFILE" -x test || {
     echo -e "${RED}Build failed${NC}"
     exit 1
   }

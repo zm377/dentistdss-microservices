@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY ./target/admin-server-*.jar admin-server.jar
+COPY ./build/libs/admin-server-*.jar admin-server.jar
 
 EXPOSE 9090
 

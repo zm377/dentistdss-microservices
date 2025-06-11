@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY ./target/config-server-*.jar config-server.jar
+COPY ./build/libs/config-server-*.jar config-server.jar
 
 EXPOSE 8888
 

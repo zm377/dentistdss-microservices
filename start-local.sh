@@ -45,7 +45,7 @@ mkdir -p logs
 
 # Build all services
 printf "${YELLOW}Building all services...${NC}\n"
-./mvnw clean package -DskipTests
+./gradlew clean bootJar -x test
 if [ $? -ne 0 ]; then
   printf "${RED}Build failed. Exiting.${NC}\n"
   exit 1
@@ -58,7 +58,7 @@ for i in "${!SERVICES[@]}"; do
   printf "${GREEN}Starting $SERVICE...${NC}\n"
   (
     cd "$SERVICE" || { printf "${RED}Failed to cd into $SERVICE. Skipping.${NC}\n"; exit 0; }
-    JAR_FILE=$(ls target/*.jar 2>/dev/null | grep -v 'original-' | head -n 1)
+    JAR_FILE=$(ls build/libs/*.jar 2>/dev/null | grep -v 'plain' | head -n 1)
     if [ -z "$JAR_FILE" ]; then
       printf "${RED}No JAR found for $SERVICE. Skipping.${NC}\n"
       exit 0

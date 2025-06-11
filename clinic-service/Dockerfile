@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY ./target/clinic-service-*.jar clinic-service.jar
+COPY ./build/libs/clinic-service-*.jar clinic-service.jar
 
 EXPOSE 8083
 

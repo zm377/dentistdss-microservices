@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY ./target/system-service-*.jar system-service.jar
+COPY ./build/libs/system-service-*.jar system-service.jar
 
 EXPOSE 8086
 

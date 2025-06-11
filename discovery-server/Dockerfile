@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
-COPY ./target/discovery-server-*.jar discovery-server.jar
+COPY ./build/libs/discovery-server-*.jar discovery-server.jar
 
 EXPOSE 8761
 

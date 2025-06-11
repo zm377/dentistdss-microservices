@@ -6,7 +6,7 @@
 # Parameters:
 #   service-name: Required - Name of the service to build (e.g., auth-service, user-profile-service)
 #   version: Optional - Image version tag (default: "latest")
-#   profile: Optional - Maven profile: "dev", "docker", or "prod" (default: "prod")
+#   profile: Optional - Gradle profile: "dev", "docker", or "prod" (default: "prod")
 #
 # Options:
 #   --parallel: Enable parallel optimizations (default)
@@ -58,7 +58,7 @@ show_help() {
   echo -e "${YELLOW}PARAMETERS:${NC}"
   echo "  service-name    Required - Name of the service to build"
   echo "  version         Optional - Image version tag (default: 'latest')"
-  echo "  profile         Optional - Maven profile: 'dev', 'docker', or 'prod' (default: 'prod')"
+  echo "  profile         Optional - Gradle profile: 'dev', 'docker', or 'prod' (default: 'prod')"
   echo ""
   echo -e "${YELLOW}OPTIONS:${NC}"
   echo "  --parallel      Enable parallel optimizations (default)"
@@ -128,10 +128,10 @@ validate_service() {
     return 1
   fi
   
-  # Check if service has a pom.xml
-  if [[ ! -f "$service/pom.xml" ]]; then
-    echo -e "${RED}❌ ERROR: Maven pom.xml not found for service: '$service'${NC}"
-    echo "   Expected file: ./$service/pom.xml"
+  # Check if service has a build.gradle
+  if [[ ! -f "$service/build.gradle" ]]; then
+    echo -e "${RED}❌ ERROR: Gradle build.gradle not found for service: '$service'${NC}"
+    echo "   Expected file: ./$service/build.gradle"
     return 1
   fi
   
@@ -296,23 +296,23 @@ docker buildx inspect --bootstrap "$BUILDX_BUILDER" >/dev/null
 
 echo -e "${GREEN}✅ Docker BuildX ready${NC}"
 
-# ---------- MAVEN BUILD ----------
+# ---------- GRADLE BUILD ----------
 
 echo ""
-echo -e "${YELLOW}🔨 Building Maven module for $SERVICE_NAME with profile: $PROFILE...${NC}"
+echo -e "${YELLOW}🔨 Building Gradle module for $SERVICE_NAME with profile: $PROFILE...${NC}"
 
 # Build only the specific service module
-MAVEN_LOG="$BUILD_LOG_DIR/maven-build.log"
+GRADLE_LOG="$BUILD_LOG_DIR/gradle-build.log"
 
-if ./mvnw -q clean package -P"$PROFILE" -DskipTests -pl "$SERVICE_NAME" -am > "$MAVEN_LOG" 2>&1; then
-  echo -e "${GREEN}✅ Maven build completed successfully${NC}"
+if ./gradlew clean :${SERVICE_NAME}:bootJar -Pprofile="$PROFILE" -x test > "$GRADLE_LOG" 2>&1; then
+  echo -e "${GREEN}✅ Gradle build completed successfully${NC}"
 else
-  echo -e "${RED}❌ Maven build failed${NC}"
+  echo -e "${RED}❌ Gradle build failed${NC}"
   echo ""
-  echo -e "${YELLOW}📋 Last 15 lines of Maven build log:${NC}"
-  tail -n 15 "$MAVEN_LOG" | sed 's/^/   /'
+  echo -e "${YELLOW}📋 Last 15 lines of Gradle build log:${NC}"
+  tail -n 15 "$GRADLE_LOG" | sed 's/^/   /'
   echo ""
-  echo -e "${CYAN}💡 Full Maven log available at: $MAVEN_LOG${NC}"
+  echo -e "${CYAN}💡 Full Gradle log available at: $GRADLE_LOG${NC}"
   exit 1
 fi
 
@@ -322,13 +322,13 @@ echo ""
 echo -e "${YELLOW}🔍 Verifying JAR file...${NC}"
 
 # Find the built JAR file
-JAR_PATTERN="./${SERVICE_NAME}/target/${SERVICE_NAME}-*.jar"
-JAR_FILES=($(ls $JAR_PATTERN 2>/dev/null | grep -v 'original-' || true))
+JAR_PATTERN="./${SERVICE_NAME}/build/libs/${SERVICE_NAME}-*.jar"
+JAR_FILES=($(ls $JAR_PATTERN 2>/dev/null | grep -v 'plain' || true))
 
 if [[ ${#JAR_FILES[@]} -eq 0 ]]; then
   echo -e "${RED}❌ ERROR: No JAR file found for $SERVICE_NAME${NC}"
   echo "   Expected pattern: $JAR_PATTERN"
-  echo "   Make sure the Maven build completed successfully."
+  echo "   Make sure the Gradle build completed successfully."
   exit 1
 fi
 
@@ -447,7 +447,7 @@ fi
 echo ""
 echo -e "${BLUE}🎯 Performance Benefits:${NC}"
 echo -e "   • Single service build: ${GREEN}~2-5 minutes${NC} (vs ~15-20 min for all services)"
-echo -e "   • Targeted Maven build: Only builds ${CYAN}$SERVICE_NAME${NC} and dependencies"
+echo -e "   • Targeted Gradle build: Only builds ${CYAN}$SERVICE_NAME${NC} and dependencies"
 echo -e "   • Optimized Docker build: Uses BuildKit and caching"
 
 echo ""

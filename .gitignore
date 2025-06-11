@@ -1,14 +1,9 @@
 HELP.md
 
 # =============================================================================
-# Build System Support (Maven + Gradle)
-# Both Maven and Gradle are supported for rollback capability
+# Build System Support (Gradle)
+# Project has been migrated from Maven to Gradle
 # =============================================================================
-
-# Maven build directories and files
-target/
-**/target/
-!.mvn/wrapper/maven-wrapper.jar
 
 # Gradle build directories and files
 build/
@@ -39,10 +34,9 @@ c.sh
 *_UPDATE_SUMMARY*.md
 migration-*.log
 
-# Exclude target directories but keep specific files needed for builds
-# !**/src/main/**/target/
-# !**/src/test/**/target/
-# !**/target/
+# Legacy Maven directories (no longer used after migration)
+target/
+**/target/
 
 ### STS ###
 .apt_generated

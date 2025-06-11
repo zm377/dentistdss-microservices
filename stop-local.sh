@@ -26,7 +26,7 @@ SERVICES=(
 printf "${YELLOW}Stopping all local Java services...${NC}\n"
 
 for SERVICE in "${SERVICES[@]}"; do
-  JAR_PATH=$(ls "$SERVICE"/target/*.jar 2>/dev/null | grep -v 'original-' | head -n 1)
+  JAR_PATH=$(ls "$SERVICE"/build/libs/*.jar 2>/dev/null | grep -v 'plain' | head -n 1)
   if [ -n "$JAR_PATH" ]; then
     PIDS=$(pgrep -f "java -jar $JAR_PATH")
     if [ -n "$PIDS" ]; then

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build and push microservices with parallel support
+# Build and push microservices with Gradle and parallel support
 # Usage: ./build-and-push.sh [version] [profile] [--parallel|--sequential] [--max-parallel=N]
 
 set -euo pipefail
@@ -91,15 +91,15 @@ if ! docker buildx inspect "$BUILDX_BUILDER" &>/dev/null; then
 fi
 docker buildx inspect --bootstrap "$BUILDX_BUILDER" &>/dev/null
 
-# Maven build
-echo "🔨 Maven build with profile: $PROFILE"
-./mvnw -q clean package -P"$PROFILE" -DskipTests
+# Gradle build
+echo "🔨 Gradle build with profile: $PROFILE"
+./gradlew clean bootJar -Pprofile="$PROFILE" --parallel --build-cache
 
 # Verify production build
 if [[ "$PROFILE" == "prod" ]]; then
   echo "🔍 Verifying no SpringDoc in production..."
   for svc in auth-service api-gateway genai-service; do
-    jar_file=$(ls "./${svc}/target/${svc}-"*.jar 2>/dev/null | head -n1)
+    jar_file=$(ls "./${svc}/build/libs/${svc}-"*.jar 2>/dev/null | head -n1)
     if [[ -f "$jar_file" ]] && jar tf "$jar_file" | grep -q "springdoc"; then
       echo "❌ SpringDoc found in $jar_file"; exit 1
     fi
