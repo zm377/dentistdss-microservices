@@ -25,7 +25,7 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     private String jwkSetUri;
 
-    @Value("${springdoc.api-docs.enabled:false}")
+    @Value("${springdoc.api-docs.enabled:true}")
     private boolean springdocEnabled;
 
     @Bean

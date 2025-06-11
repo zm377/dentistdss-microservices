@@ -134,11 +134,15 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
 
         log.debug("Anonymous user session - SessionID: {}", sessionInfo.getSessionId());
 
-        // Add session ID to response headers for frontend
+        // Add session ID to response headers for frontend (only if response is not committed)
         return chain.filter(exchange.mutate().request(modifiedRequest).build())
                 .then(Mono.fromRunnable(() -> {
-                    exchange.getResponse().getHeaders().add("X-Session-ID", sessionInfo.getSessionId());
-                    log.debug("Added session ID to response headers: {}", sessionInfo.getSessionId());
+                    if (!exchange.getResponse().isCommitted()) {
+                        exchange.getResponse().getHeaders().add("X-Session-ID", sessionInfo.getSessionId());
+                        log.debug("Added session ID to response headers: {}", sessionInfo.getSessionId());
+                    } else {
+                        log.debug("Response already committed, skipping session ID header addition");
+                    }
                 }));
     }
 
@@ -153,7 +157,15 @@ public class AnonymousSessionFilter implements GlobalFilter, Ordered {
                path.startsWith("/actuator/") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui") ||
-               path.startsWith("/admin");
+               path.startsWith("/admin") ||
+               // Skip for service-specific Swagger/OpenAPI endpoints
+               path.contains("/v3/api-docs") ||
+               path.contains("/swagger-ui") ||
+               path.endsWith("/v3/api-docs") ||
+               path.matches(".*/v3/api-docs.*") ||
+               // Additional patterns for service-specific documentation
+               path.matches(".*-service/v3/api-docs.*") ||
+               path.matches(".*-service/swagger-ui.*");
     }
 
     @Override
