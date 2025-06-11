@@ -18,7 +18,7 @@
 #   ./build-and-push-prod-single-service.sh auth-service
 #   ./build-and-push-prod-single-service.sh user-profile-service v1.2.3
 #   ./build-and-push-prod-single-service.sh genai-service latest docker
-#   ./build-and-push-prod-single-service.sh clinic-service v2.0.0 prod --sequential
+#   ./build-and-push-prod-single-service.sh clinic-admin-service v2.0.0 prod --sequential
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ PLATFORM="linux/amd64"
 BUILDX_BUILDER="dentist-multiarch"
 
 # All available services
-ALL_SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-service genai-service clinic-service appointment-service clinical-records-service user-profile-service admin-server notification-service)
+ALL_SERVICES=(config-server discovery-server api-gateway auth-service audit-service system-admin-service genai-service clinic-admin-service appointment-service clinical-records-service user-profile-service admin-server notification-service chat-log-service reporting-service)
 
 # Default values
 SERVICE_NAME=""
@@ -70,7 +70,7 @@ show_help() {
   echo "  $0 auth-service"
   echo "  $0 user-profile-service v1.2.3"
   echo "  $0 genai-service latest docker"
-  echo "  $0 clinic-service v2.0.0 prod --sequential"
+  echo "  $0 clinic-admin-service v2.0.0 prod --sequential"
   echo ""
   echo -e "${YELLOW}AVAILABLE SERVICES:${NC}"
   for svc in "${ALL_SERVICES[@]}"; do

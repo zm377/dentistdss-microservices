@@ -123,8 +123,8 @@ services:
 
 
 
-  clinic-service:
-    image: dentistdss_clinic-service:latest
+  clinic-admin-service:
+    image: dentistdss_clinic-admin-service:latest
     restart: always
     depends_on:
       - api-gateway
@@ -261,8 +261,8 @@ services:
     networks:
       - dentistdss-network
 
-  system-service:
-    image: dentistdss_system-service:latest
+  system-admin-service:
+    image: dentistdss_system-admin-service:latest
     restart: always
     depends_on:
       - api-gateway
@@ -296,6 +296,51 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "8087:8087"
+    networks:
+      - dentistdss-network
+
+  # Chat Log Service
+  chat-log-service:
+    image: dentistdss_chat-log-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATA_MONGODB_URI=mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/dentistdss?authSource=admin
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "8091:8091"
+    networks:
+      - dentistdss-network
+
+  # Reporting Service
+  reporting-service:
+    image: dentistdss_reporting-service:latest
+    restart: always
+    depends_on:
+      - api-gateway
+      - postgres
+      - mongo
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_READONLY_PASSWORD=${POSTGRES_READONLY_PASSWORD}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    ports:
+      - "8092:8092"
     networks:
       - dentistdss-network
 

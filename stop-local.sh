@@ -13,14 +13,16 @@ SERVICES=(
   "api-gateway"
   "auth-service"
   "audit-service"
-  "system-service"
+  "system-admin-service"
   "genai-service"
-  "clinic-service"
+  "clinic-admin-service"
   "appointment-service"
   "clinical-records-service"
   "user-profile-service"
   "admin-server"
   "notification-service"
+  "chat-log-service"
+  "reporting-service"
 )
 
 printf "${YELLOW}Stopping all local Java services...${NC}\n"

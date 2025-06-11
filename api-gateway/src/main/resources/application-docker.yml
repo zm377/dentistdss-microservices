@@ -43,7 +43,7 @@ spring:
             cors-configurations:
               '[/**]':
                 allowedOrigins:
-                  - "https://dentist.mizhifei.press"
+                  - "https://dentistdss.com"
                   - "https://accounts.google.com"
                 allowedMethods:
                   - GET

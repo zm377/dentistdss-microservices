@@ -89,7 +89,7 @@ app:
   email-verification:
     token-expiry-minutes: 43200 # 30 days in minutes
     code-expiry-minutes: 10 # 10 minutes in minutes
-    base-url: ${BASE_URL:https://dentist.mizhifei.press}
+    base-url: ${BASE_URL:https://dentistdss.com}
   oauth2:
     authorizedRedirectUris:
-      - https://dentist.mizhifei.press/oauth2/redirect
+      - https://dentistdss.com/oauth2/redirect

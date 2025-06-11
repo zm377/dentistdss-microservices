@@ -63,7 +63,7 @@ test_config_server() {
     test_endpoint "$CONFIG_SERVER_URL/api-gateway/dev" "API Gateway Dev Config"
     test_endpoint "$CONFIG_SERVER_URL/api-gateway/docker" "API Gateway Docker Config"
     test_endpoint "$CONFIG_SERVER_URL/genai-service/default" "GenAI Service Default Config"
-    test_endpoint "$CONFIG_SERVER_URL/system-service/default" "System Service Default Config"
+    test_endpoint "$CONFIG_SERVER_URL/system-admin-service/default" "System Admin Service Default Config"
     test_endpoint "$CONFIG_SERVER_URL/application/default" "Global Application Config"
     
     # Test config server info
@@ -101,9 +101,9 @@ test_refresh_endpoints() {
     local services=(
         "api-gateway:8080"
         "genai-service:8084"
-        "system-service:8086"
+        "system-admin-service:8086"
         "auth-service:8081"
-        "clinic-service:8083"
+        "clinic-admin-service:8083"
     )
     
     for service_port in "${services[@]}"; do
@@ -162,8 +162,8 @@ test_rate_limiting_config() {
     echo -e "\n${BLUE}🚦 Testing Rate Limiting Configuration${NC}"
     echo "--------------------------------------"
     
-    # Test system service rate limit endpoints
-    test_endpoint "http://localhost:8086/system/rate-limit/active" "Active Rate Limit Configurations"
+    # Test system admin service rate limit endpoints
+    test_endpoint "http://localhost:8086/api/system-admin/config/rate-limits" "Active Rate Limit Configurations"
     
     # Test API Gateway rate limit management
     test_endpoint "http://localhost:8080/management/rate-limit/health" "Rate Limit Management Health"

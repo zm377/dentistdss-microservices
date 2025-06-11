@@ -13,14 +13,16 @@ SERVICES=(
   "api-gateway"
   "auth-service"
   "audit-service"
-  "system-service"
+  "system-admin-service"
   "genai-service"
-  "clinic-service"
+  "clinic-admin-service"
   "appointment-service"
   "clinical-records-service"
   "user-profile-service"
   "admin-server"
   "notification-service"
+  "chat-log-service"
+  "reporting-service"
 )
 
 # Corresponding log file names
@@ -30,14 +32,16 @@ LOGS=(
   "logs/api-gateway.log"
   "logs/auth-service.log"
   "logs/audit-service.log"
-  "logs/system-service.log"
+  "logs/system-admin-service.log"
   "logs/genai-service.log"
-  "logs/clinic-service.log"
+  "logs/clinic-admin-service.log"
   "logs/appointment-service.log"
   "logs/clinical-records-service.log"
   "logs/user-profile-service.log"
   "logs/admin-server.log"
   "logs/notification-service.log"
+  "logs/chat-log-service.log"
+  "logs/reporting-service.log"
 )
 
 # Create logs directory if it doesn't exist

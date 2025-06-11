@@ -2,7 +2,7 @@
 
 A microservices-based Dentist Decision Support System with centralized JWT authentication.
 
-**Live Demo**: [https://dentist.mizhifei.press/](https://dentist.mizhifei.press/)
+**Live Demo**: [https://dentistdss.com/](https://dentistdss.com/)
 **Repository**: [https://github.com/zm377/dentistdss-microservices](https://github.com/zm377/dentistdss-microservices)
 
 ## Architecture Overview
@@ -118,7 +118,7 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:8080/api/clinic/1/patient
 
 | Service | Port | URL |
 |---------|------|-----|
-| API Gateway | 443/8080 | https://api.mizhifei.press |
+| API Gateway | 443/8080 | https://api.dentistdss.com |
 | Config Server | 8888 | http://localhost:8888 |
 | Eureka | 8761 | http://localhost:8761 |
 | Auth Service | 8081 | http://localhost:8081 |
