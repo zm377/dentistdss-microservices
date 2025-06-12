@@ -46,9 +46,11 @@ secrets/
 *_UPDATE_SUMMARY*.md
 migration-*.log
 
-# Legacy Maven directories (no longer used after migration)
+# Legacy build directories (no longer used after migration)
 target/
 **/target/
+bin/
+**/bin/
 
 ### STS ###
 .apt_generated

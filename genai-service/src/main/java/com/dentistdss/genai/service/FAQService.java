@@ -30,15 +30,17 @@ public class FAQService {
      */
     public Flux<FAQ> searchRelevantFAQs(String userInput, Long clinicId) {
         if (userInput == null || userInput.trim().isEmpty()) {
+            log.debug("Empty or null user input provided");
             return Flux.empty();
         }
 
         String cleanInput = userInput.toLowerCase().trim();
+        log.debug("Searching FAQs for input: {}, clinicId: {}", cleanInput, clinicId);
 
         // Try different search strategies and combine results
         Flux<FAQ> textSearchResults = faqRepository.findByTextSearch(cleanInput)
                 .onErrorResume(e -> {
-                    log.warn("Text search failed: {}", e.getMessage());
+                    log.warn("Text search failed for input '{}': {}", cleanInput, e.getMessage());
                     return Flux.empty();
                 });
 
@@ -46,21 +48,32 @@ public class FAQService {
         List<String> keywords = extractKeywords(cleanInput);
         Flux<FAQ> keywordResults = keywords.isEmpty() ?
                 Flux.empty() :
-                faqRepository.findByKeywordsIn(keywords);
+                faqRepository.findByKeywordsIn(keywords)
+                        .onErrorResume(e -> {
+                            log.warn("Keyword search failed for keywords {}: {}", keywords, e.getMessage());
+                            return Flux.empty();
+                        });
 
         // 3. Category-based search
         String category = detectCategory(cleanInput);
         Flux<FAQ> categoryResults = category == null ?
                 Flux.empty() :
-                faqRepository.findByCategoryAndClinicIdOrGlobal(category, clinicId);
+                faqRepository.findByCategoryAndClinicIdOrGlobal(category, clinicId)
+                        .onErrorResume(e -> {
+                            log.warn("Category search failed for category '{}': {}", category, e.getMessage());
+                            return Flux.empty();
+                        });
 
         // Combine all search results
         return Flux.merge(textSearchResults, keywordResults, categoryResults)
                 .distinct()
                 .collectList()
                 .flatMapMany(results -> {
+                    log.debug("Found {} total FAQ results before sorting", results.size());
+
                     // Sort by relevance
                     List<FAQ> sortedResults = results.stream()
+                            .filter(Objects::nonNull) // Filter out any null FAQs
                             .sorted((faq1, faq2) -> {
                                 // Sort by priority first, then by relevance score
                                 int priorityCompare = Integer.compare(
@@ -77,7 +90,12 @@ public class FAQService {
                             .limit(5) // Return top 5 most relevant FAQs
                             .collect(Collectors.toList());
 
+                    log.debug("Returning {} sorted FAQ results", sortedResults.size());
                     return Flux.fromIterable(sortedResults);
+                })
+                .onErrorResume(e -> {
+                    log.error("Error in searchRelevantFAQs for input '{}': {}", cleanInput, e.getMessage(), e);
+                    return Flux.empty();
                 });
     }
     
@@ -91,9 +109,10 @@ public class FAQService {
 
         return searchRelevantFAQs(userInput, clinicId)
                 .collectList()
-                .map(relevantFAQs -> {
+                .flatMap(relevantFAQs -> {
                     if (relevantFAQs.isEmpty()) {
-                        return null;
+                        log.debug("No relevant FAQs found for input: {}", userInput);
+                        return Mono.empty(); // Return empty Mono instead of null
                     }
 
                     StringBuilder context = new StringBuilder();
@@ -104,9 +123,9 @@ public class FAQService {
                         context.append("A: ").append(faq.getAnswer()).append("\n\n");
                     }
 
-                    return context.toString();
-                })
-                .filter(Objects::nonNull);
+                    log.debug("Found {} relevant FAQs for input: {}", relevantFAQs.size(), userInput);
+                    return Mono.just(context.toString());
+                });
     }
     
     /**
@@ -156,31 +175,37 @@ public class FAQService {
      * Calculate relevance score for FAQ
      */
     private double calculateRelevanceScore(FAQ faq, String userInput) {
+        if (faq == null || userInput == null || userInput.trim().isEmpty()) {
+            return 0.0;
+        }
+
         double score = 0.0;
-        
+        String lowerUserInput = userInput.toLowerCase();
+
         // Check question similarity
-        if (faq.getQuestion().toLowerCase().contains(userInput)) {
+        if (faq.getQuestion() != null && faq.getQuestion().toLowerCase().contains(lowerUserInput)) {
             score += 3.0;
         }
-        
+
         // Check answer similarity
-        if (faq.getAnswer().toLowerCase().contains(userInput)) {
+        if (faq.getAnswer() != null && faq.getAnswer().toLowerCase().contains(lowerUserInput)) {
             score += 2.0;
         }
-        
+
         // Check keyword matches
-        if (faq.getKeywords() != null) {
+        if (faq.getKeywords() != null && !faq.getKeywords().isEmpty()) {
             List<String> inputKeywords = extractKeywords(userInput);
             long matchingKeywords = faq.getKeywords().stream()
+                    .filter(Objects::nonNull) // Filter out null keywords
                     .mapToLong(keyword -> inputKeywords.contains(keyword.toLowerCase()) ? 1 : 0)
                     .sum();
             score += matchingKeywords * 1.5;
         }
-        
+
         // Boost score based on popularity
         score += (faq.getViewCount() != null ? faq.getViewCount() : 0) * 0.01;
         score += (faq.getHelpfulCount() != null ? faq.getHelpfulCount() : 0) * 0.1;
-        
+
         return score;
     }
     
