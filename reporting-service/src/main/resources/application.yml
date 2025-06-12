@@ -27,11 +27,11 @@ spring:
         idle-timeout: 600000
         max-lifetime: 1800000
         pool-name: ReportingHikariPool
-    # Read Replica Configuration (if available)
+    # Read Replica Configuration (using same user as primary for now)
     replica:
       url: jdbc:postgresql://localhost:5432/dentistdss
-      username: dentistdss_readonly
-      password: ${POSTGRES_READONLY_PASSWORD:${POSTGRES_PASSWORD}}
+      username: dentistdss
+      password: ${POSTGRES_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 15
@@ -58,19 +58,7 @@ spring:
           max-idle: 8
           min-idle: 0
 
-  # JPA Configuration
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          batch_size: 50
-        order_inserts: true
-        order_updates: true
-        generate_statistics: false
-    show-sql: false
+
 
   # Mail Configuration
   mail:
@@ -108,6 +96,7 @@ spring:
           jobStore:
             class: org.quartz.impl.jdbcjobstore.JobStoreTX
             driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+            dataSource: quartzDataSource
             useProperties: false
             misfireThreshold: 60000
             tablePrefix: QRTZ_
@@ -178,7 +167,6 @@ springdoc:
 logging:
   level:
     com.dentistdss: DEBUG
-    org.springframework.data.jpa: DEBUG
     org.springframework.data.mongodb: DEBUG
     org.springframework.cache: DEBUG
     org.quartz: INFO

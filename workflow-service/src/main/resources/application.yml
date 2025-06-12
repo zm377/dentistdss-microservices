@@ -1,0 +1,82 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: workflow-service
+  config:
+    import: optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@localhost:8888
+  jmx:
+    enabled: false
+
+  # Database Configuration (PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dentistdss
+    username: dentistdss
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        types:
+          print_banner: false
+    show-sql: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    preferIpAddress: false
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  jmx:
+    exposure:
+      exclude: "*"  # Disable JMX to avoid RMI issues
+
+# OpenAPI/SpringDoc Configuration - enabled for development
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+logging:
+  level:
+    com.dentistdss: DEBUG
+    org.springframework: INFO
+    root: INFO
+
+# Workflow Configuration
+workflow:
+  execution:
+    # Maximum time a workflow step can run before timing out (in minutes)
+    step-timeout-minutes: 30
+    # Maximum time a workflow instance can remain active (in days)
+    instance-timeout-days: 30
+    # Number of retry attempts for failed steps
+    max-retry-attempts: 3
+  notification:
+    # Enable/disable workflow notifications
+    enabled: true
+    # Default notification templates
+    templates:
+      workflow-started: "workflow_started"
+      workflow-completed: "workflow_completed"
+      workflow-failed: "workflow_failed"
+      step-approval-required: "step_approval_required"
+      step-approved: "step_approved"
+      step-rejected: "step_rejected"

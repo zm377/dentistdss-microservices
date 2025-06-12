@@ -4,7 +4,7 @@
     "name": "Patient No-Show Analysis",
     "description": "Analyzes patient no-show patterns and trends over time",
     "category": "CLINICAL",
-    "type": "PATIENT_ANALYTICS",
+    "type": "PATIENT_NO_SHOWS",
     "queryTemplate": "SELECT DATE_TRUNC('day', a.appointment_date) as date, COUNT(*) as total_appointments, COUNT(CASE WHEN a.status = 'NO_SHOW' THEN 1 END) as no_shows, ROUND(COUNT(CASE WHEN a.status = 'NO_SHOW' THEN 1 END) * 100.0 / COUNT(*), 2) as no_show_percentage FROM appointments a WHERE a.clinic_id = ${clinicId} AND a.appointment_date BETWEEN '${startDate}' AND '${endDate}' AND a.status IN ('COMPLETED', 'NO_SHOW', 'CANCELLED') GROUP BY DATE_TRUNC('day', a.appointment_date) ORDER BY date",
     "parameters": [
       {
@@ -52,8 +52,8 @@
         "chartId": "no_show_trend",
         "chartType": "LINE",
         "title": "No-Show Trend Over Time",
-        "xAxisColumn": "date",
-        "yAxisColumn": "no_show_percentage",
+        "xaxisColumn": "date",
+        "yaxisColumn": "no_show_percentage",
         "chartOptions": {
           "showDataPoints": true,
           "lineColor": "#FF6B6B"
@@ -69,7 +69,7 @@
     "name": "Appointment Utilization Report",
     "description": "Analyzes appointment scheduling efficiency and capacity utilization",
     "category": "OPERATIONAL",
-    "type": "APPOINTMENT_METRICS",
+    "type": "APPOINTMENT_UTILIZATION",
     "queryTemplate": "WITH time_slots AS (SELECT DATE_TRUNC('hour', a.appointment_date) as hour_slot, COUNT(*) as scheduled_appointments, COUNT(CASE WHEN a.status = 'COMPLETED' THEN 1 END) as completed_appointments, AVG(EXTRACT(EPOCH FROM (a.actual_end_time - a.actual_start_time))/60) as avg_duration_minutes FROM appointments a WHERE a.clinic_id = ${clinicId} AND a.appointment_date BETWEEN '${startDate}' AND '${endDate}' GROUP BY DATE_TRUNC('hour', a.appointment_date)) SELECT ts.hour_slot, ts.scheduled_appointments, ts.completed_appointments, ts.avg_duration_minutes, ROUND(ts.scheduled_appointments * 100.0 / 8, 2) as utilization_percentage FROM time_slots ts ORDER BY ts.hour_slot",
     "parameters": [
       {
@@ -158,8 +158,8 @@
         "chartId": "revenue_trend",
         "chartType": "BAR",
         "title": "Daily Revenue Trend",
-        "xAxisColumn": "date",
-        "yAxisColumn": "total_revenue",
+        "xaxisColumn": "date",
+        "yaxisColumn": "total_revenue",
         "chartOptions": {
           "barColor": "#4ECDC4"
         }

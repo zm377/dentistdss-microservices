@@ -395,6 +395,28 @@ services:
       - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
 
+  # Workflow Service
+  workflow-service:
+    build:
+      context: ./workflow-service
+    container_name: workflow-service
+    restart: always
+    ports:
+      - "8093:8093"
+    networks:
+      - dentistdss-network
+    depends_on:
+      - api-gateway
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://${SPRING_CONFIG_USER}:${SPRING_CONFIG_PASS}@config-server:8888
+      - EUREKA_URI=http://discovery-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/dentistdss
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_CONFIG_USER=${SPRING_CONFIG_USER}
+      - SPRING_CONFIG_PASS=${SPRING_CONFIG_PASS}
+
   # Reporting Service
   reporting-service:
     build:

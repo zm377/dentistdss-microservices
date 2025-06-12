@@ -23,8 +23,8 @@ spring:
         pool-name: ReportingHikariPool
     replica:
       url: jdbc:postgresql://postgres:5432/dentistdss
-      username: dentistdss_readonly
-      password: ${POSTGRES_READONLY_PASSWORD:${POSTGRES_PASSWORD}}
+      username: dentistdss
+      password: ${POSTGRES_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 15

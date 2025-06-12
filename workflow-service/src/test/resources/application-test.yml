@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+eureka:
+  client:
+    enabled: false
+
+logging:
+  level:
+    com.dentistdss: DEBUG
+    org.springframework: WARN
+    root: WARN
+
+workflow:
+  execution:
+    step-timeout-minutes: 5
+    instance-timeout-days: 1
+    max-retry-attempts: 1
+  notification:
+    enabled: false

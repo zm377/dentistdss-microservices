@@ -30,7 +30,7 @@ public class AuditController {
     @PostMapping
     public ResponseEntity<ApiResponse<AuditEntryResponse>> record(@Valid @RequestBody AuditEntryRequest request) {
         try {
-            log.info("Recording audit entry for user: {}, action: {}", request.getUserId(), request.getAction());
+            log.info("Recording audit entry for actor: {}, action: {}", request.getActor(), request.getAction());
             AuditEntryResponse response = auditService.record(request);
             return ResponseEntity.ok(ApiResponse.success(response));
         } catch (Exception e) {

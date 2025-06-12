@@ -26,6 +26,7 @@ include 'audit-service'
 include 'notification-service'
 include 'chat-log-service'
 include 'reporting-service'
+include 'workflow-service'
 
 // Enable Gradle features for performance
 enableFeaturePreview('TYPESAFE_PROJECT_ACCESSORS')

@@ -31,8 +31,9 @@ The DentistDSS microservices follow enterprise Java naming conventions:
   - `com.dentistdss.discovery` - Discovery Server
   - `com.dentistdss.config` - Config Server
   - `com.dentistdss.admin` - Admin Server
+  - `com.dentistdss.workflow` - Workflow Service
 
-## Services (11 microservices + 2 databases)
+## Services (12 microservices + 2 databases)
 
 ### Databases
 - **PostgreSQL (v17)**: Port 5432 - User accounts, clinic data, patient records
@@ -53,6 +54,7 @@ The DentistDSS microservices follow enterprise Java naming conventions:
 - **Notification Service**: Port 8088 - Email, SMS, push notifications
 - **GenAI Service**: Port 8084 - AI chatbots, OpenAI integration
 - **Audit Service**: Port 8087 - Activity logging, compliance
+- **Workflow Service**: Port 8093 - Workflow orchestration, approval processes
 - **Admin Server**: Port 9090 - Service monitoring, health checks
 
 ## Quick Start
@@ -128,6 +130,7 @@ curl -H "Authorization: Bearer TOKEN" http://localhost:8080/api/clinic/1/patient
 | System Service | 8086 | http://localhost:8086 |
 | Audit Service | 8087 | http://localhost:8087 |
 | Notification Service | 8088 | http://localhost:8088 |
+| Workflow Service | 8093 | http://localhost:8093 |
 | Admin Server | 9090 | http://localhost:9090 |
 | PostgreSQL | 5432 | localhost:5432 |
 | MongoDB | 27017 | localhost:27017 |
@@ -554,4 +557,167 @@ For detailed information:
 - **Solution**: Replaced Feign client with direct RestTemplate service calls to system-admin-service
 - **Benefits**: Eliminated dependency cycle, improved performance with direct HTTP calls, enhanced reliability with proper fallbacks
 - **Implementation**: Created RateLimitConfigService with dedicated RestTemplate bean and proper timeout configurations
+
+## Workflow Service
+
+The Workflow Service is a central workflow orchestration service that manages all business workflow processes in the DentistDSS system. It provides a scalable foundation for managing complex business processes with configurable workflow definitions, step-by-step execution, and comprehensive audit logging.
+
+### Core Features
+
+#### Workflow Orchestration
+- **Centralized Management**: Single point of control for all business workflow processes
+- **Configurable Workflow Definitions**: Define workflows with multiple steps and conditions
+- **Step-by-Step Processing**: Execute workflows with automated and manual approval steps
+- **Workflow History and Audit Logging**: Complete audit trail of workflow executions
+- **Support for Multiple Step Types**: Automated, manual approval, service calls, notifications, conditional, parallel, wait, and script steps
+
+#### Initial Migration
+- **User Account Signup Approval Workflow**: Successfully migrated from auth-service and user-profile-service
+- **Backward Compatibility**: Maintains existing approval logic and business rules
+- **Seamless Integration**: Continues to work with existing services without disruption
+
+### Architecture
+
+#### Technology Stack
+- **Java 21** with Spring Boot 3.5.0
+- **PostgreSQL** for data persistence
+- **Spring Cloud** for service discovery and configuration
+- **Spring Data JPA** for database operations
+- **Feign Clients** for inter-service communication
+- **Docker** for containerization
+
+#### Database Schema
+The service uses the following main entities:
+- `workflow_definitions`: Configurable workflow templates
+- `workflow_step_definitions`: Individual step definitions within workflows
+- `workflow_instances`: Active workflow executions
+- `workflow_executions`: Step execution history and state
+
+### API Endpoints
+
+#### Workflow Definition Management
+- `POST /workflow/definition` - Create workflow definition
+- `GET /workflow/definition/{id}` - Get workflow definition
+- `GET /workflow/definition/name/{name}` - Get workflow by name
+- `PUT /workflow/definition/{id}` - Update workflow definition
+- `DELETE /workflow/definition/{id}` - Delete workflow definition
+
+#### Workflow Execution
+- `POST /workflow/execution/start` - Start new workflow instance
+- `GET /workflow/execution/{instanceId}` - Get workflow instance details
+- `GET /workflow/execution/status/{status}` - Get workflows by status
+- `POST /workflow/execution/step/{executionId}/approve` - Approve/reject workflow step
+
+#### User Approval Workflows (Legacy Compatibility)
+- `POST /workflow/user-approval/request` - Create user approval request
+- `POST /workflow/user-approval/clinic-admin/request` - Create clinic admin approval
+- `POST /workflow/user-approval/staff/request` - Create staff approval
+- `GET /workflow/user-approval/pending` - Get pending approvals
+- `GET /workflow/user-approval/history/{userId}` - Get user approval history
+
+#### Migration Support
+- `POST /workflow/migration/user-approval` - Migrate existing approval request
+- `POST /workflow/migration/user-approval/batch` - Batch migrate approvals
+- `GET /workflow/migration/validate/{workflowInstanceId}` - Validate migration
+
+### Workflow Types
+
+#### User Approval Workflow
+Handles user registration approvals with the following steps:
+1. **Validate User Data**: Automated validation of registration data
+2. **Send Approval Notification**: Notify system admins
+3. **Await System Admin Approval**: Manual approval step
+4. **Update User Status**: Service call to auth-service
+5. **Send Approval Result**: Notify user of decision
+
+#### Clinic Admin Approval Workflow
+Handles clinic administrator approvals with additional clinic validation:
+1. **Validate Clinic Admin Data**: Automated validation
+2. **Send Clinic Admin Approval Notification**: Notify system admins
+3. **Await System Admin Approval**: Manual approval step
+4. **Update User Status**: Service call to auth-service
+5. **Update Clinic Status**: Service call to auth-service
+6. **Send Approval Result**: Notify clinic admin
+
+#### Staff Approval Workflow
+Handles clinic staff approvals with clinic admin approval:
+1. **Validate Staff Data**: Automated validation
+2. **Send Clinic Admin Notification**: Notify clinic admin
+3. **Await Clinic Admin Approval**: Manual approval step
+4. **Update User Status**: Service call to auth-service
+5. **Send Approval Result**: Notify staff member
+
+### Configuration
+
+#### Application Properties
+```yaml
+server:
+  port: 8093
+
+workflow:
+  execution:
+    step-timeout-minutes: 30
+    instance-timeout-days: 30
+    max-retry-attempts: 3
+  notification:
+    enabled: true
+```
+
+#### Environment Variables
+- `POSTGRES_PASSWORD`: Database password
+- `EUREKA_URI`: Service discovery URL
+- `SPRING_CONFIG_USER`: Config server username
+- `SPRING_CONFIG_PASS`: Config server password
+
+### Migration Guide
+
+#### From User-Profile-Service
+The workflow service provides migration endpoints to move existing approval requests:
+
+1. **Individual Migration**:
+   ```bash
+   POST /workflow/migration/user-approval
+   ```
+
+2. **Batch Migration**:
+   ```bash
+   POST /workflow/migration/user-approval/batch
+   ```
+
+3. **Validation**:
+   ```bash
+   GET /workflow/migration/validate/{workflowInstanceId}
+   ```
+
+### Integration
+
+#### Service Dependencies
+- **auth-service**: For user and clinic status updates
+- **notification-service**: For sending workflow notifications
+- **user-profile-service**: For user data retrieval (during migration)
+
+#### Client Integration
+Other services can integrate with the workflow service using:
+- **Feign Clients**: For synchronous API calls
+- **Event Publishing**: For asynchronous workflow triggers (future enhancement)
+
+### Monitoring and Observability
+
+#### Health Checks
+- `/actuator/health` - Service health status
+- `/actuator/info` - Service information
+- `/actuator/metrics` - Service metrics
+
+#### API Documentation
+- `/swagger-ui.html` - Interactive API documentation (development only)
+- `/v3/api-docs` - OpenAPI specification
+
+### Future Enhancements
+
+1. **Event-Driven Architecture**: Integration with message queues for asynchronous processing
+2. **Workflow Designer UI**: Visual workflow definition interface
+3. **Advanced Condition Engine**: Support for complex conditional logic
+4. **Workflow Templates**: Pre-built templates for common business processes
+5. **Performance Optimization**: Caching and batch processing improvements
+6. **Advanced Monitoring**: Workflow performance metrics and alerting
 

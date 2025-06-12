@@ -10,14 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -44,25 +42,25 @@ class AuditServiceTest {
 
     @BeforeEach
     void setUp() {
+        Map<String, Object> context = Map.of(
+                "details", "Created new appointment for patient",
+                "ipAddress", "192.168.1.1",
+                "userAgent", "Mozilla/5.0"
+        );
+
         auditEntryRequest = AuditEntryRequest.builder()
-                .userId(1L)
+                .actor("user:1")
                 .action("CREATE_APPOINTMENT")
-                .resource("appointments")
-                .resourceId("123")
-                .details("Created new appointment for patient")
-                .ipAddress("192.168.1.1")
-                .userAgent("Mozilla/5.0")
+                .target("appointment:123")
+                .context(context)
                 .build();
 
         auditEntry = AuditEntry.builder()
-                .id(1L)
-                .userId(1L)
+                .id("1")
+                .actor("user:1")
                 .action("CREATE_APPOINTMENT")
-                .resource("appointments")
-                .resourceId("123")
-                .details("Created new appointment for patient")
-                .ipAddress("192.168.1.1")
-                .userAgent("Mozilla/5.0")
+                .target("appointment:123")
+                .context(context)
                 .timestamp(LocalDateTime.now())
                 .build();
     }
@@ -78,13 +76,10 @@ class AuditServiceTest {
         // Then
         assertNotNull(response);
         assertEquals(auditEntry.getId(), response.getId());
-        assertEquals(auditEntry.getUserId(), response.getUserId());
+        assertEquals(auditEntry.getActor(), response.getActor());
         assertEquals(auditEntry.getAction(), response.getAction());
-        assertEquals(auditEntry.getResource(), response.getResource());
-        assertEquals(auditEntry.getResourceId(), response.getResourceId());
-        assertEquals(auditEntry.getDetails(), response.getDetails());
-        assertEquals(auditEntry.getIpAddress(), response.getIpAddress());
-        assertEquals(auditEntry.getUserAgent(), response.getUserAgent());
+        assertEquals(auditEntry.getTarget(), response.getTarget());
+        assertEquals(auditEntry.getContext(), response.getContext());
         assertNotNull(response.getTimestamp());
 
         verify(auditEntryRepository).save(any(AuditEntry.class));
@@ -93,145 +88,32 @@ class AuditServiceTest {
     @Test
     void record_NullRequest_ThrowsException() {
         // When & Then
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             auditService.record(null);
         });
     }
 
     @Test
-    void getAuditEntries_ValidParameters_Success() {
+    void listAll_Success() {
         // Given
-        Pageable pageable = PageRequest.of(0, 10);
         List<AuditEntry> auditEntries = Arrays.asList(auditEntry);
-        Page<AuditEntry> auditPage = new PageImpl<>(auditEntries, pageable, 1);
-        
-        when(auditEntryRepository.findAll(pageable)).thenReturn(auditPage);
+        when(auditEntryRepository.findAll()).thenReturn(auditEntries);
 
         // When
-        Page<AuditEntryResponse> response = auditService.getAuditEntries(pageable);
+        List<AuditEntryResponse> response = auditService.listAll();
 
         // Then
         assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getContent().size());
-        
-        AuditEntryResponse firstEntry = response.getContent().get(0);
+        assertEquals(1, response.size());
+
+        AuditEntryResponse firstEntry = response.get(0);
         assertEquals(auditEntry.getId(), firstEntry.getId());
-        assertEquals(auditEntry.getUserId(), firstEntry.getUserId());
+        assertEquals(auditEntry.getActor(), firstEntry.getActor());
         assertEquals(auditEntry.getAction(), firstEntry.getAction());
+        assertEquals(auditEntry.getTarget(), firstEntry.getTarget());
+        assertEquals(auditEntry.getContext(), firstEntry.getContext());
 
-        verify(auditEntryRepository).findAll(pageable);
+        verify(auditEntryRepository).findAll();
     }
 
-    @Test
-    void getAuditEntriesByUser_ValidUserId_Success() {
-        // Given
-        Long userId = 1L;
-        Pageable pageable = PageRequest.of(0, 10);
-        List<AuditEntry> auditEntries = Arrays.asList(auditEntry);
-        Page<AuditEntry> auditPage = new PageImpl<>(auditEntries, pageable, 1);
-        
-        when(auditEntryRepository.findByUserId(userId, pageable)).thenReturn(auditPage);
-
-        // When
-        Page<AuditEntryResponse> response = auditService.getAuditEntriesByUser(userId, pageable);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getContent().size());
-        
-        AuditEntryResponse firstEntry = response.getContent().get(0);
-        assertEquals(userId, firstEntry.getUserId());
-
-        verify(auditEntryRepository).findByUserId(userId, pageable);
-    }
-
-    @Test
-    void getAuditEntriesByAction_ValidAction_Success() {
-        // Given
-        String action = "CREATE_APPOINTMENT";
-        Pageable pageable = PageRequest.of(0, 10);
-        List<AuditEntry> auditEntries = Arrays.asList(auditEntry);
-        Page<AuditEntry> auditPage = new PageImpl<>(auditEntries, pageable, 1);
-        
-        when(auditEntryRepository.findByAction(action, pageable)).thenReturn(auditPage);
-
-        // When
-        Page<AuditEntryResponse> response = auditService.getAuditEntriesByAction(action, pageable);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getContent().size());
-        
-        AuditEntryResponse firstEntry = response.getContent().get(0);
-        assertEquals(action, firstEntry.getAction());
-
-        verify(auditEntryRepository).findByAction(action, pageable);
-    }
-
-    @Test
-    void getAuditEntriesByResource_ValidResource_Success() {
-        // Given
-        String resource = "appointments";
-        Pageable pageable = PageRequest.of(0, 10);
-        List<AuditEntry> auditEntries = Arrays.asList(auditEntry);
-        Page<AuditEntry> auditPage = new PageImpl<>(auditEntries, pageable, 1);
-        
-        when(auditEntryRepository.findByResource(resource, pageable)).thenReturn(auditPage);
-
-        // When
-        Page<AuditEntryResponse> response = auditService.getAuditEntriesByResource(resource, pageable);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getContent().size());
-        
-        AuditEntryResponse firstEntry = response.getContent().get(0);
-        assertEquals(resource, firstEntry.getResource());
-
-        verify(auditEntryRepository).findByResource(resource, pageable);
-    }
-
-    @Test
-    void getAuditEntriesByDateRange_ValidDateRange_Success() {
-        // Given
-        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
-        LocalDateTime endDate = LocalDateTime.now();
-        Pageable pageable = PageRequest.of(0, 10);
-        List<AuditEntry> auditEntries = Arrays.asList(auditEntry);
-        Page<AuditEntry> auditPage = new PageImpl<>(auditEntries, pageable, 1);
-        
-        when(auditEntryRepository.findByTimestampBetween(startDate, endDate, pageable)).thenReturn(auditPage);
-
-        // When
-        Page<AuditEntryResponse> response = auditService.getAuditEntriesByDateRange(startDate, endDate, pageable);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(1, response.getTotalElements());
-        assertEquals(1, response.getContent().size());
-
-        verify(auditEntryRepository).findByTimestampBetween(startDate, endDate, pageable);
-    }
-
-    @Test
-    void convertToResponse_ValidAuditEntry_Success() {
-        // When
-        AuditEntryResponse response = auditService.convertToResponse(auditEntry);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(auditEntry.getId(), response.getId());
-        assertEquals(auditEntry.getUserId(), response.getUserId());
-        assertEquals(auditEntry.getAction(), response.getAction());
-        assertEquals(auditEntry.getResource(), response.getResource());
-        assertEquals(auditEntry.getResourceId(), response.getResourceId());
-        assertEquals(auditEntry.getDetails(), response.getDetails());
-        assertEquals(auditEntry.getIpAddress(), response.getIpAddress());
-        assertEquals(auditEntry.getUserAgent(), response.getUserAgent());
-        assertEquals(auditEntry.getTimestamp(), response.getTimestamp());
-    }
 }

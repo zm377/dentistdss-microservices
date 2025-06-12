@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/dentistdss
+    username: dentistdss
+    password: ${POSTGRES_PASSWORD}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    preferIpAddress: true
+
+logging:
+  level:
+    com.dentistdss: INFO
+    org.springframework: WARN
+    root: WARN

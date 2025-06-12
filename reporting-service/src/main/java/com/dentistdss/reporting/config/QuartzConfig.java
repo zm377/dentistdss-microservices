@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.quartz.QuartzDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 
@@ -20,6 +21,7 @@ import javax.sql.DataSource;
  */
 @Slf4j
 @Configuration
+@Profile("!test")
 public class QuartzConfig {
 
     /**

@@ -49,6 +49,38 @@ Enum "approval_status" {
   "REJECTED"
 }
 
+Enum "workflow_status" {
+  "CREATED"
+  "RUNNING"
+  "WAITING"
+  "COMPLETED"
+  "FAILED"
+  "CANCELLED"
+  "TIMEOUT"
+}
+
+Enum "step_status" {
+  "PENDING"
+  "RUNNING"
+  "WAITING_APPROVAL"
+  "COMPLETED"
+  "FAILED"
+  "SKIPPED"
+  "CANCELLED"
+  "TIMEOUT"
+}
+
+Enum "step_type" {
+  "AUTOMATED"
+  "MANUAL_APPROVAL"
+  "SERVICE_CALL"
+  "NOTIFICATION"
+  "CONDITIONAL"
+  "PARALLEL"
+  "WAIT"
+  "SCRIPT"
+}
+
 Table "users" {
   "id" BIGINT [pk, default: `nextval('user_id_seq')`]
   "email" VARCHAR(255) [unique, not null]
@@ -400,6 +432,126 @@ Table "user_approval_requests" {
   "updated_at" TIMESTAMP [default: `CURRENT_TIMESTAMP`]
 }
 
+Table "workflow_definitions" {
+  "id" BIGINT [pk, default: `nextval('workflow_definition_id_seq')`]
+  "name" VARCHAR(255) [unique, not null]
+  "display_name" VARCHAR(255) [not null]
+  "description" TEXT
+  "version" INTEGER [not null, default: 1]
+  "category" VARCHAR(100)
+  "is_active" BOOLEAN [not null, default: TRUE]
+  "is_system_workflow" BOOLEAN [not null, default: FALSE]
+  "timeout_minutes" INTEGER
+  "max_retry_attempts" INTEGER [default: 3]
+  "auto_start" BOOLEAN [not null, default: FALSE]
+  "requires_approval" BOOLEAN [not null, default: FALSE]
+  "configuration" JSONB
+  "input_schema" JSONB
+  "output_schema" JSONB
+  "created_by" BIGINT
+  "updated_by" BIGINT
+  "created_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    name [name: "idx_workflow_definitions_name"]
+    (name, version) [unique, name: "uk_workflow_definitions_name_version"]
+    category [name: "idx_workflow_definitions_category"]
+    is_active [name: "idx_workflow_definitions_is_active"]
+  }
+}
+
+Table "workflow_step_definitions" {
+  "id" BIGINT [pk, default: `nextval('workflow_step_definition_id_seq')`]
+  "workflow_definition_id" BIGINT [not null]
+  "step_name" VARCHAR(255) [not null]
+  "step_order" INTEGER [not null]
+  "step_type" step_type [not null]
+  "description" TEXT
+  "is_required" BOOLEAN [not null, default: TRUE]
+  "is_parallel" BOOLEAN [not null, default: FALSE]
+  "timeout_minutes" INTEGER
+  "retry_attempts" INTEGER [default: 0]
+  "condition_expression" TEXT
+  "approval_roles" "TEXT[]"
+  "service_endpoint" VARCHAR(500)
+  "notification_template" VARCHAR(255)
+  "step_configuration" JSONB
+  "input_mapping" JSONB
+  "output_mapping" JSONB
+  "created_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    workflow_definition_id [name: "idx_workflow_step_definitions_workflow_id"]
+    (workflow_definition_id, step_order) [unique, name: "uk_workflow_step_definitions_workflow_order"]
+    step_type [name: "idx_workflow_step_definitions_step_type"]
+  }
+}
+
+Table "workflow_instances" {
+  "id" BIGINT [pk, default: `nextval('workflow_instance_id_seq')`]
+  "workflow_definition_id" BIGINT [not null]
+  "instance_name" VARCHAR(255)
+  "status" workflow_status [not null, default: 'CREATED']
+  "business_key" VARCHAR(255)
+  "entity_type" VARCHAR(100)
+  "entity_id" BIGINT
+  "priority" INTEGER [default: 5]
+  "input_data" JSONB
+  "output_data" JSONB
+  "context_data" JSONB
+  "current_step_order" INTEGER
+  "error_message" TEXT
+  "retry_count" INTEGER [default: 0]
+  "started_by" BIGINT
+  "started_at" TIMESTAMP
+  "completed_at" TIMESTAMP
+  "timeout_at" TIMESTAMP
+  "created_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    workflow_definition_id [name: "idx_workflow_instances_workflow_id"]
+    business_key [unique, name: "uk_workflow_instances_business_key"]
+    status [name: "idx_workflow_instances_status"]
+    (entity_type, entity_id) [name: "idx_workflow_instances_entity"]
+    started_by [name: "idx_workflow_instances_started_by"]
+    created_at [name: "idx_workflow_instances_created_at"]
+  }
+}
+
+Table "workflow_executions" {
+  "id" BIGINT [pk, default: `nextval('workflow_execution_id_seq')`]
+  "workflow_instance_id" BIGINT [not null]
+  "step_definition_id" BIGINT [not null]
+  "step_name" VARCHAR(255) [not null]
+  "step_order" INTEGER [not null]
+  "step_type" step_type [not null]
+  "status" step_status [not null, default: 'PENDING']
+  "input_data" JSONB
+  "output_data" JSONB
+  "error_message" TEXT
+  "retry_count" INTEGER [default: 0]
+  "assigned_to" BIGINT
+  "approved_by" BIGINT
+  "approval_notes" TEXT
+  "started_at" TIMESTAMP
+  "completed_at" TIMESTAMP
+  "timeout_at" TIMESTAMP
+  "created_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" TIMESTAMP [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    workflow_instance_id [name: "idx_workflow_executions_instance_id"]
+    step_definition_id [name: "idx_workflow_executions_step_def_id"]
+    status [name: "idx_workflow_executions_status"]
+    assigned_to [name: "idx_workflow_executions_assigned_to"]
+    approved_by [name: "idx_workflow_executions_approved_by"]
+    (workflow_instance_id, step_order) [unique, name: "uk_workflow_executions_instance_order"]
+  }
+}
+
 Table "audit_logs" {
   "id" BIGINT [pk, default: `nextval('audit_log_id_seq')`]
   "user_id" BIGINT
@@ -540,6 +692,24 @@ Ref:"users"."id" < "user_approval_requests"."user_id" [delete: cascade]
 Ref:"clinics"."id" < "user_approval_requests"."clinic_id"
 
 Ref:"users"."id" < "user_approval_requests"."reviewed_by"
+
+Ref:"users"."id" < "workflow_definitions"."created_by"
+
+Ref:"users"."id" < "workflow_definitions"."updated_by"
+
+Ref:"workflow_definitions"."id" < "workflow_step_definitions"."workflow_definition_id" [delete: cascade]
+
+Ref:"workflow_definitions"."id" < "workflow_instances"."workflow_definition_id" [delete: cascade]
+
+Ref:"users"."id" < "workflow_instances"."started_by"
+
+Ref:"workflow_instances"."id" < "workflow_executions"."workflow_instance_id" [delete: cascade]
+
+Ref:"workflow_step_definitions"."id" < "workflow_executions"."step_definition_id"
+
+Ref:"users"."id" < "workflow_executions"."assigned_to"
+
+Ref:"users"."id" < "workflow_executions"."approved_by"
 
 Ref:"users"."id" < "audit_logs"."user_id"
 
