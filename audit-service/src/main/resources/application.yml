@@ -9,7 +9,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss
+      uri: mongodb://dentistdss:${MONGO_INITDB_ROOT_PASSWORD}@localhost:27017/dentistdss?authSource=admin
       database: dentistdss
 
   security:
